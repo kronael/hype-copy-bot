@@ -1,7 +1,7 @@
 # Default target
 .DEFAULT_GOAL := help
 
-.PHONY: build test clean run docker-build docker-run help
+.PHONY: build test clean run image prepare help
 
 # Binary name
 BINARY_NAME = main
@@ -10,8 +10,13 @@ BINARY_NAME = main
 DOCKER_IMAGE = hyperliquid-trade-bot
 DOCKER_TAG = latest
 
+# Prepare environment
+prepare:
+	go mod download
+	go mod tidy
+
 # Build the binary
-build:
+build: prepare
 	go build -o $(BINARY_NAME) .
 
 # Run the application
@@ -27,32 +32,21 @@ clean:
 	go clean
 	rm -f $(BINARY_NAME)
 
-# Docker targets
-docker-build:
+# Docker image
+image:
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
-
-# Run in Docker (testnet mode)
-docker-run: docker-build
-	docker run -it --rm \
-		-e HYPERLIQUID_TARGET_ACCOUNT=${HYPERLIQUID_TARGET_ACCOUNT} \
-		-e HYPERLIQUID_API_KEY=${HYPERLIQUID_API_KEY} \
-		-e HYPERLIQUID_PRIVATE_KEY=${HYPERLIQUID_PRIVATE_KEY} \
-		-e HYPERLIQUID_USE_TESTNET=true \
-		-e HYPERLIQUID_COPY_THRESHOLD=${HYPERLIQUID_COPY_THRESHOLD:-1000.0} \
-		-v $(PWD)/data:/app/data \
-		$(DOCKER_IMAGE):$(DOCKER_TAG)
 
 # Help target
 help:
 	@echo "Hyperliquid Trade Following Bot"
 	@echo ""
 	@echo "Commands:"
+	@echo "  prepare       - Download and tidy dependencies"
 	@echo "  build         - Build binary"
 	@echo "  run           - Build and run locally"
 	@echo "  test          - Run all tests"
 	@echo "  clean         - Remove build artifacts"
-	@echo "  docker-build  - Build Docker image"
-	@echo "  docker-run    - Run in Docker (testnet)"
+	@echo "  image         - Build Docker image"
 	@echo ""
 	@echo "Environment Variables:"
 	@echo "  HYPERLIQUID_TARGET_ACCOUNT - Account to follow (required)"
