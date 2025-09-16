@@ -8,12 +8,12 @@ import (
 )
 
 type Bot struct {
-	config      *Config
-	client      *HyperliquidClient
-	running     bool
-	stopChan    chan struct{}
-	wg          sync.WaitGroup
-	lastFillHash string
+	config         *Config
+	client         *HyperliquidClient
+	running        bool
+	stopChan       chan struct{}
+	wg             sync.WaitGroup
+	lastFillHash   string
 	processedFills map[string]bool
 }
 

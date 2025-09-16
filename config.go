@@ -6,11 +6,11 @@ import (
 )
 
 type Config struct {
-	TargetAccount    string
-	APIKey          string
-	PrivateKey      string
-	UseTestnet      bool
-	CopyThreshold   float64 // minimum trade size to copy
+	TargetAccount string
+	APIKey        string
+	PrivateKey    string
+	UseTestnet    bool
+	CopyThreshold float64 // minimum trade size to copy
 }
 
 func loadConfig() (*Config, error) {

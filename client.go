@@ -20,18 +20,18 @@ type HyperliquidClient struct {
 }
 
 type Fill struct {
-	Coin      string  `json:"coin"`
-	Side      string  `json:"side"`
-	Size      float64 `json:"sz,string"`
-	Price     float64 `json:"px,string"`
-	Time      int64   `json:"time"`
+	Coin          string  `json:"coin"`
+	Side          string  `json:"side"`
+	Size          float64 `json:"sz,string"`
+	Price         float64 `json:"px,string"`
+	Time          int64   `json:"time"`
 	StartPosition float64 `json:"startPosition,string"`
-	Dir       string  `json:"dir"`
-	ClosedPnl string  `json:"closedPnl"`
-	Hash      string  `json:"hash"`
-	Oid       int64   `json:"oid"`
-	Crossed   bool    `json:"crossed"`
-	Fee       string  `json:"fee"`
+	Dir           string  `json:"dir"`
+	ClosedPnl     string  `json:"closedPnl"`
+	Hash          string  `json:"hash"`
+	Oid           int64   `json:"oid"`
+	Crossed       bool    `json:"crossed"`
+	Fee           string  `json:"fee"`
 }
 
 type Order struct {
@@ -91,12 +91,12 @@ func (c *HyperliquidClient) PlaceOrder(order *Order) error {
 		"type": "order",
 		"orders": []map[string]interface{}{
 			{
-				"a":         order.Coin,
-				"b":         order.Side == "buy",
-				"p":         fmt.Sprintf("%.6f", order.Price),
-				"s":         fmt.Sprintf("%.6f", order.Size),
-				"r":         false,
-				"t":         map[string]string{"limit": "Limit"}[order.Type],
+				"a": order.Coin,
+				"b": order.Side == "buy",
+				"p": fmt.Sprintf("%.6f", order.Price),
+				"s": fmt.Sprintf("%.6f", order.Size),
+				"r": false,
+				"t": map[string]string{"limit": "Limit"}[order.Type],
 			},
 		},
 		"grouping": "na",
