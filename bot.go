@@ -15,7 +15,7 @@ type Bot struct {
 	wg             sync.WaitGroup
 	lastFillHash   string
 	processedFills map[string]bool
-	pnlTracker     *PnLTracker
+	paperTrader    *PaperTrader
 }
 
 func NewBot(config *Config) (*Bot, error) {
@@ -29,7 +29,7 @@ func NewBot(config *Config) (*Bot, error) {
 		client:         client,
 		stopChan:       make(chan struct{}),
 		processedFills: make(map[string]bool),
-		pnlTracker:     NewPnLTracker(),
+		paperTrader:    NewPaperTrader(),
 	}, nil
 }
 
@@ -54,9 +54,9 @@ func (b *Bot) Stop() {
 	b.wg.Wait()
 	b.client.Close()
 
-	// Show final PnL summary
-	b.pnlTracker.PrintSummary()
-	b.pnlTracker.PrintRecentTrades(10)
+	// Show final paper trading summary
+	b.paperTrader.PrintPortfolioSummary()
+	b.paperTrader.PrintRecentTrades(10)
 }
 
 func (b *Bot) monitorTrades() {
@@ -116,8 +116,8 @@ func (b *Bot) checkForNewTrades() error {
 		log.Printf("Processed %d new fills", newFillsCount)
 
 		// Show summary every 10 trades
-		if b.pnlTracker.TotalTrades > 0 && b.pnlTracker.TotalTrades%10 == 0 {
-			b.pnlTracker.PrintSummary()
+		if b.paperTrader.TotalTrades > 0 && b.paperTrader.TotalTrades%10 == 0 {
+			b.paperTrader.PrintPortfolioSummary()
 		}
 	}
 
@@ -131,8 +131,8 @@ func (b *Bot) processFill(fill *Fill) error {
 		return nil
 	}
 
-	// Track this trade for PnL calculation
-	b.pnlTracker.ProcessFill(fill)
+	// Process this trade in paper trader
+	b.paperTrader.ProcessFill(fill)
 
 	return nil
 }
