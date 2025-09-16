@@ -129,8 +129,11 @@ cp config.toml.example config.toml
 # Run tests
 make test
 
-# Build and run
-make run
+# Build
+make build
+
+# Run manually
+./main
 ```
 
 ## 🧪 Testing

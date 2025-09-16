@@ -1,7 +1,7 @@
 # Default target
 .DEFAULT_GOAL := help
 
-.PHONY: build test clean run image prepare help
+.PHONY: build test clean image prepare help
 
 # Binary name
 BINARY_NAME = main
@@ -18,10 +18,6 @@ prepare:
 # Build the binary
 build: prepare
 	go build -o $(BINARY_NAME) .
-
-# Run the application
-run: build
-	./$(BINARY_NAME)
 
 # Run all tests
 test:
@@ -43,7 +39,6 @@ help:
 	@echo "Commands:"
 	@echo "  prepare       - Download and tidy dependencies"
 	@echo "  build         - Build binary"
-	@echo "  run           - Build and run locally"
 	@echo "  test          - Run all tests"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  image         - Build Docker image"
