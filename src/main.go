@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	log.Println("starting hyperliquid trade following bot...")
+	log.Println("starting hype-copy-bot...")
 
 	var configFile string
 	if len(os.Args) > 1 {
