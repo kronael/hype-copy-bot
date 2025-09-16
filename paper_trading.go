@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -239,13 +240,19 @@ func (pt *PaperTrader) updatePosition(position *Position, tradeSize float64, pri
 	} else if oldSize == 0 {
 		// New position
 		position.AvgEntryPrice = price
-		position.TotalCostBasis = price * tradeSize
+		position.TotalCostBasis = price * math.Abs(tradeSize)
+		position.OpenTime = time.Now()
+	} else if (oldSize > 0 && newSize < 0) || (oldSize < 0 && newSize > 0) {
+		// Position reversal - new position in opposite direction
+		reversedSize := math.Abs(newSize)
+		position.AvgEntryPrice = price
+		position.TotalCostBasis = price * reversedSize
 		position.OpenTime = time.Now()
 	} else if (oldSize > 0 && tradeSize > 0) || (oldSize < 0 && tradeSize < 0) {
 		// Adding to position - recalculate weighted average
-		totalCost := position.TotalCostBasis + (price * tradeSize)
+		totalCost := position.TotalCostBasis + (price * math.Abs(tradeSize))
 		position.TotalCostBasis = totalCost
-		position.AvgEntryPrice = totalCost / newSize
+		position.AvgEntryPrice = totalCost / math.Abs(newSize)
 	}
 	// For reducing positions, keep the same average entry price
 }

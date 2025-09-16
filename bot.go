@@ -89,26 +89,27 @@ func (b *Bot) checkForNewTrades() error {
 	maxFillsPerCheck := 50 // Safety limit to prevent overloading
 
 	for _, fill := range fills {
-		// Skip if we've already processed this fill
-		if b.processedFills[fill.Hash] {
-			continue
-		}
-
 		// Safety limit check
 		if newFillsCount >= maxFillsPerCheck {
 			log.Printf("Reached maximum fills per check (%d), deferring remaining fills", maxFillsPerCheck)
 			break
 		}
 
-		// Mark as processed
-		b.processedFills[fill.Hash] = true
-		newFillsCount++
+		// Skip if already processed (checked in processFill)
+		if b.processedFills[fill.Hash] {
+			continue
+		}
 
 		log.Printf("New fill detected: %s %s %.6f @ %.6f (hash: %s)",
 			fill.Side, fill.Coin, fill.Size, fill.Price, fill.Hash[:8])
 
 		if err := b.processFill(fill); err != nil {
 			log.Printf("Error processing fill: %v", err)
+		} else {
+			// Only increment if actually processed (not skipped due to threshold)
+			if b.processedFills[fill.Hash] {
+				newFillsCount++
+			}
 		}
 	}
 
@@ -125,11 +126,19 @@ func (b *Bot) checkForNewTrades() error {
 }
 
 func (b *Bot) processFill(fill *Fill) error {
+	// Skip if we've already processed this fill
+	if b.processedFills[fill.Hash] {
+		return nil
+	}
+
 	// Calculate trade value
 	tradeValue := fill.Size * fill.Price
 	if tradeValue < b.config.CopyThreshold {
 		return nil
 	}
+
+	// Mark as processed
+	b.processedFills[fill.Hash] = true
 
 	// Process this trade in paper trader
 	b.paperTrader.ProcessFill(fill)
