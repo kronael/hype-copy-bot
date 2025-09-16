@@ -1,4 +1,4 @@
-# Hyperliquid Trade Following Bot
+# hype-copy-bot
 
 A sophisticated trade following bot for Hyperliquid DEX that monitors successful traders and provides comprehensive paper trading analytics with real-time position management.
 
@@ -93,7 +93,18 @@ if b.processedFills[fill.Hash] {
 - Hyperliquid API access
 - Environment variables configured
 
-### Environment Configuration
+### Configuration
+
+**Option 1: TOML Configuration (Recommended)**
+```bash
+# Copy example configuration
+cp config.toml.example config.toml
+
+# Edit with your credentials
+nano config.toml
+```
+
+**Option 2: Environment Variables (Legacy)**
 ```bash
 export HYPERLIQUID_TARGET_ACCOUNT="0x..."  # Account to follow
 export HYPERLIQUID_API_KEY="your_api_key"
@@ -106,19 +117,20 @@ export HYPERLIQUID_COPY_THRESHOLD="1000.0" # Optional: default 0.01
 ```bash
 # Clone and setup
 git clone <repository>
-cd hfloŵ
+cd hype-copy-bot
 
-# Install dependencies
-go mod tidy
+# Prepare dependencies
+make prepare
+
+# Copy and configure
+cp config.toml.example config.toml
+# Edit config.toml with your credentials
 
 # Run tests
-go test -v ./...
+make test
 
-# Build
-go build -o hyperliquid-bot
-
-# Run
-./hyperliquid-bot
+# Build and run
+make run
 ```
 
 ## 🧪 Testing
@@ -170,13 +182,39 @@ go test -cover ./...
 
 ## 🎯 Usage Examples
 
-### Basic Monitoring
+### Local Development
 ```bash
 # Monitor The White Whale (default)
-./hyperliquid-bot
+./main
 
 # Custom threshold
-HYPERLIQUID_COPY_THRESHOLD=5000.0 ./hyperliquid-bot
+HYPERLIQUID_COPY_THRESHOLD=5000.0 ./main
+```
+
+### Docker Usage
+```bash
+# Build Docker image
+make image
+
+# Run in Docker (testnet mode)
+docker run -it --rm \
+  -e HYPERLIQUID_TARGET_ACCOUNT=${HYPERLIQUID_TARGET_ACCOUNT} \
+  -e HYPERLIQUID_API_KEY=${HYPERLIQUID_API_KEY} \
+  -e HYPERLIQUID_PRIVATE_KEY=${HYPERLIQUID_PRIVATE_KEY} \
+  -e HYPERLIQUID_USE_TESTNET=true \
+  -e HYPERLIQUID_COPY_THRESHOLD=${HYPERLIQUID_COPY_THRESHOLD:-1000.0} \
+  -v $(PWD)/data:/app/data \
+  hype-copy-bot:latest
+
+# Run in Docker (mainnet mode) - WARNING: Real trading
+docker run -it --rm \
+  -e HYPERLIQUID_TARGET_ACCOUNT=${HYPERLIQUID_TARGET_ACCOUNT} \
+  -e HYPERLIQUID_API_KEY=${HYPERLIQUID_API_KEY} \
+  -e HYPERLIQUID_PRIVATE_KEY=${HYPERLIQUID_PRIVATE_KEY} \
+  -e HYPERLIQUID_USE_TESTNET=false \
+  -e HYPERLIQUID_COPY_THRESHOLD=${HYPERLIQUID_COPY_THRESHOLD:-1000.0} \
+  -v $(PWD)/data:/app/data \
+  hype-copy-bot:latest
 ```
 
 ### Configuration Examples

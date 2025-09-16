@@ -7,7 +7,7 @@
 BINARY_NAME = main
 
 # Docker image settings
-DOCKER_IMAGE = hyperliquid-trade-bot
+DOCKER_IMAGE = hype-copy-bot
 DOCKER_TAG = latest
 
 # Prepare environment
@@ -38,7 +38,7 @@ image:
 
 # Help target
 help:
-	@echo "Hyperliquid Trade Following Bot"
+	@echo "hype-copy-bot"
 	@echo ""
 	@echo "Commands:"
 	@echo "  prepare       - Download and tidy dependencies"
