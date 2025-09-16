@@ -15,6 +15,7 @@ type Bot struct {
 	wg             sync.WaitGroup
 	lastFillHash   string
 	processedFills map[string]bool
+	pnlTracker     *PnLTracker
 }
 
 func NewBot(config *Config) (*Bot, error) {
@@ -28,6 +29,7 @@ func NewBot(config *Config) (*Bot, error) {
 		client:         client,
 		stopChan:       make(chan struct{}),
 		processedFills: make(map[string]bool),
+		pnlTracker:     NewPnLTracker(),
 	}, nil
 }
 
@@ -51,6 +53,10 @@ func (b *Bot) Stop() {
 	close(b.stopChan)
 	b.wg.Wait()
 	b.client.Close()
+
+	// Show final PnL summary
+	b.pnlTracker.PrintSummary()
+	b.pnlTracker.PrintRecentTrades(10)
 }
 
 func (b *Bot) monitorTrades() {
@@ -108,6 +114,11 @@ func (b *Bot) checkForNewTrades() error {
 
 	if newFillsCount > 0 {
 		log.Printf("Processed %d new fills", newFillsCount)
+
+		// Show summary every 10 trades
+		if b.pnlTracker.TotalTrades > 0 && b.pnlTracker.TotalTrades%10 == 0 {
+			b.pnlTracker.PrintSummary()
+		}
 	}
 
 	return nil
@@ -117,31 +128,11 @@ func (b *Bot) processFill(fill *Fill) error {
 	// Calculate trade value
 	tradeValue := fill.Size * fill.Price
 	if tradeValue < b.config.CopyThreshold {
-		log.Printf("Skipping small trade: value %.6f < threshold %.6f", tradeValue, b.config.CopyThreshold)
 		return nil
 	}
 
-	// Convert fill side to order side (B = buy, A = sell)
-	side := "buy"
-	if fill.Side == "A" {
-		side = "sell"
-	}
-
-	log.Printf("Copying trade: %s %s %.6f @ %.6f (value: %.2f)",
-		side, fill.Coin, fill.Size, fill.Price, tradeValue)
-
-	// For now, just log the trade copy since we don't have signing implemented
-	// TODO: Implement actual order placement once signing is ready
-	log.Printf("Would place order: %s %s %.6f @ %.6f", side, fill.Coin, fill.Size, fill.Price)
-
-	// Uncomment when signing is implemented:
-	// return b.client.PlaceOrder(&Order{
-	// 	Coin:  fill.Coin,
-	// 	Side:  side,
-	// 	Size:  fill.Size,
-	// 	Price: fill.Price,
-	// 	Type:  "limit",
-	// })
+	// Track this trade for PnL calculation
+	b.pnlTracker.ProcessFill(fill)
 
 	return nil
 }

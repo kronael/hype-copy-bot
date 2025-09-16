@@ -51,32 +51,34 @@ func testBot() {
 		TargetAccount: os.Getenv("TARGET_ACCOUNT"),
 		APIKey:        os.Getenv("API_KEY"),
 		PrivateKey:    os.Getenv("PRIVATE_KEY"),
-		UseTestnet:    true,
-		CopyThreshold: 100.0, // Set a higher threshold for testing
+		UseTestnet:    false,  // Use mainnet to follow real trader
+		CopyThreshold: 1000.0, // Set threshold to $1000 to focus on significant trades
 	}
 
 	if config.TargetAccount == "" {
-		config.TargetAccount = "0x0000000000000000000000000000000000000000" // test address
+		// Follow "The White Whale" - top Hyperliquid trader
+		config.TargetAccount = "0xb8b9e3097c8b1dddf9c5ea9d48a7ebeaf09d67d2"
 	}
 	if config.PrivateKey == "" {
 		config.PrivateKey = "0000000000000000000000000000000000000000000000000000000000000000" // dummy key for testing
 	}
 
-	fmt.Printf("Testing bot with target account: %s\n", config.TargetAccount)
-	fmt.Printf("Copy threshold: %.2f\n", config.CopyThreshold)
+	fmt.Printf("🐋 Following 'The White Whale' - Top Hyperliquid Trader\n")
+	fmt.Printf("📍 Target Account: %s\n", config.TargetAccount)
+	fmt.Printf("💰 Copy Threshold: $%.2f\n", config.CopyThreshold)
 
 	bot, err := NewBot(config)
 	if err != nil {
 		log.Fatal("Failed to create bot:", err)
 	}
 
-	fmt.Println("Starting bot for 15 seconds...")
+	fmt.Println("Starting PnL tracking for 30 seconds...")
 	if err := bot.Start(); err != nil {
 		log.Fatal("Failed to start bot:", err)
 	}
 
-	// Let it run for 15 seconds
-	time.Sleep(15 * time.Second)
+	// Let it run for 30 seconds to capture more trades
+	time.Sleep(30 * time.Second)
 
 	fmt.Println("Stopping bot...")
 	bot.Stop()
