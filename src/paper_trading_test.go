@@ -8,7 +8,6 @@ import (
 
 func TestPositionActionDetermination(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	tests := []struct {
 		name     string
@@ -41,7 +40,6 @@ func TestPositionActionDetermination(t *testing.T) {
 
 func TestVolumeWeightedAveragePrice(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	// Test building a long position
 	fills := []*Fill{
@@ -69,7 +67,6 @@ func TestVolumeWeightedAveragePrice(t *testing.T) {
 
 func TestRealizedPnLCalculation(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	// Build position then reduce it
 	fills := []*Fill{
@@ -99,7 +96,6 @@ func TestRealizedPnLCalculation(t *testing.T) {
 
 func TestUnrealizedPnLCalculation(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	// Buy 1 BTC at 50000
 	fill := createTestFill("BTC", "B", 1.0, 50000.0, "0.0", time.Now().Unix())
@@ -119,7 +115,6 @@ func TestUnrealizedPnLCalculation(t *testing.T) {
 
 func TestPositionReversal(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	fills := []*Fill{
 		// Build long position: 2 BTC at 50000
@@ -147,7 +142,6 @@ func TestPositionReversal(t *testing.T) {
 
 func TestWhaleScenario(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	// Simulate The White Whale's ETH trading scenario
 	fills := []*Fill{
@@ -188,7 +182,6 @@ func TestWhaleScenario(t *testing.T) {
 
 func TestMultipleAssetPortfolio(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	fills := []*Fill{
 		// BTC long position
@@ -270,7 +263,6 @@ func TestSmallTradeFiltering(t *testing.T) {
 
 func TestZeroAndNegativeSizes(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	// Test zero size trade (should be ignored)
 	zeroFill := createTestFill("BTC", "B", 0.0, 50000.0, "0.0", time.Now().Unix())
@@ -288,7 +280,6 @@ func TestZeroAndNegativeSizes(t *testing.T) {
 
 func TestHighFrequencyTrading(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	// Simulate rapid fire trades like The White Whale
 	baseTime := time.Now().Unix()
@@ -325,7 +316,6 @@ func TestHighFrequencyTrading(t *testing.T) {
 
 func TestPnLStringParsing(t *testing.T) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	tests := []struct {
 		name     string
@@ -367,7 +357,6 @@ func createTestFill(coin, side string, size, price float64, closedPnl string, ti
 // Benchmark test for performance
 func BenchmarkPaperTraderProcessFill(b *testing.B) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 	fill := createTestFill("BTC", "B", 1.0, 50000.0, "100.0", time.Now().Unix())
 
 	b.ResetTimer()
@@ -381,7 +370,6 @@ func BenchmarkPaperTraderProcessFill(b *testing.B) {
 
 func BenchmarkPositionActionDetermination(b *testing.B) {
 	pt := NewPaperTrader()
-	pt.Silent = true
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

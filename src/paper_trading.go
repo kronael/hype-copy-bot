@@ -11,14 +11,12 @@ import (
 )
 
 type PaperTrader struct {
-	mu                 sync.RWMutex
-	Positions          map[string]*Position
-	TotalRealizedPnL   float64
-	TotalUnrealizedPnL float64
-	TotalTrades        int
-	StartTime          time.Time
-	TradeHistory       []*PaperTrade
-	Silent             bool
+	mu               sync.Mutex
+	Positions        map[string]*Position
+	TotalRealizedPnL float64
+	TotalTrades      int
+	StartTime        time.Time
+	TradeHistory     []*PaperTrade
 }
 
 type Position struct {
@@ -148,9 +146,7 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 	position.LastPrice = fill.Price
 
 	// Print trade with proper formatting
-	if !pt.Silent {
-		pt.printTrade(trade, action)
-	}
+	pt.printTrade(trade, action)
 }
 
 func (pt *PaperTrader) getPosition(coin string) *Position {
@@ -310,8 +306,8 @@ func (pt *PaperTrader) printTrade(trade *PaperTrade, action PositionAction) {
 }
 
 func (pt *PaperTrader) PrintPortfolioSummary() {
-	pt.mu.RLock()
-	defer pt.mu.RUnlock()
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
 
 	fmt.Println("\n" + strings.Repeat("=", 80))
 	fmt.Println("📊 PAPER TRADING PORTFOLIO SUMMARY")
@@ -371,14 +367,14 @@ func (pt *PaperTrader) PrintPortfolioSummary() {
 }
 
 func (pt *PaperTrader) GetTotalTrades() int {
-	pt.mu.RLock()
-	defer pt.mu.RUnlock()
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
 	return pt.TotalTrades
 }
 
 func (pt *PaperTrader) PrintRecentTrades(count int) {
-	pt.mu.RLock()
-	defer pt.mu.RUnlock()
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
 
 	if len(pt.TradeHistory) == 0 {
 		return
