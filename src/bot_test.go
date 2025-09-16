@@ -20,7 +20,6 @@ func TestBotConfigValidation(t *testing.T) {
 				TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 				APIKey:        "test_key",
 				PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-				UseTestnet:    true,
 				CopyThreshold: 100.0,
 			},
 			expectError: false,
@@ -31,7 +30,6 @@ func TestBotConfigValidation(t *testing.T) {
 				TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 				APIKey:        "test_key",
 				PrivateKey:    "invalid_key",
-				UseTestnet:    true,
 				CopyThreshold: 100.0,
 			},
 			expectError: true,
@@ -54,7 +52,6 @@ func TestFillProcessingThreshold(t *testing.T) {
 		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 		APIKey:        "test_key",
 		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		UseTestnet:    true,
 		CopyThreshold: 1000.0, // $1000 threshold
 	}
 
@@ -179,7 +176,6 @@ func TestClientAPI(t *testing.T) {
 		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 		APIKey:        "test_key",
 		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		UseTestnet:    true,
 		CopyThreshold: 100.0,
 	}
 
@@ -216,7 +212,6 @@ func TestBotDuplicateFillHandling(t *testing.T) {
 		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 		APIKey:        "test_key",
 		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		UseTestnet:    true,
 		CopyThreshold: 100.0,
 	}
 
@@ -266,12 +261,7 @@ func TestConfigEnvironmentDefaults(t *testing.T) {
 
 	// Test the config structure has expected defaults
 	testConfig := &Config{
-		UseTestnet:    true,
 		CopyThreshold: 0.01,
-	}
-
-	if testConfig.UseTestnet != true {
-		t.Errorf("Default UseTestnet = %v, want true", testConfig.UseTestnet)
 	}
 
 	if testConfig.CopyThreshold != 0.01 {
@@ -284,7 +274,6 @@ func TestBotStartStop(t *testing.T) {
 		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 		APIKey:        "test_key",
 		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		UseTestnet:    true,
 		CopyThreshold: 100.0,
 	}
 
@@ -325,7 +314,6 @@ func TestRealWorldTradingScenario(t *testing.T) {
 		TargetAccount: "0xb8b9e3097c8b1dddf9c5ea9d48a7ebeaf09d67d2",
 		APIKey:        "test_key",
 		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		UseTestnet:    false,
 		CopyThreshold: 1000.0,
 	}
 
@@ -394,7 +382,6 @@ func TestErrorHandling(t *testing.T) {
 		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 		APIKey:        "test_key",
 		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		UseTestnet:    true,
 		CopyThreshold: 100.0,
 	}
 
@@ -440,7 +427,6 @@ func BenchmarkBotProcessFill(b *testing.B) {
 		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
 		APIKey:        "test_key",
 		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		UseTestnet:    true,
 		CopyThreshold: 100.0,
 	}
 

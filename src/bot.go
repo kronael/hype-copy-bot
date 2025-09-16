@@ -9,7 +9,7 @@ import (
 
 type Bot struct {
 	config         *Config
-	client         *HyperliquidClient
+	client         *Client
 	running        bool
 	stopChan       chan struct{}
 	wg             sync.WaitGroup
@@ -19,7 +19,7 @@ type Bot struct {
 }
 
 func NewBot(config *Config) (*Bot, error) {
-	client, err := NewHyperliquidClient(config)
+	client, err := NewClient(config)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func NewBot(config *Config) (*Bot, error) {
 }
 
 func (b *Bot) Start() error {
-	log.Println("Starting trade following bot...")
+	log.Println("starting trade following bot...")
 	b.running = true
 
 	b.wg.Add(1)
@@ -48,7 +48,7 @@ func (b *Bot) Stop() {
 		return
 	}
 
-	log.Println("Stopping bot...")
+	log.Println("stopping bot...")
 	b.running = false
 	close(b.stopChan)
 	b.wg.Wait()
@@ -65,15 +65,16 @@ func (b *Bot) monitorTrades() {
 	ticker := time.NewTicker(5 * time.Second) // Check every 5 seconds
 	defer ticker.Stop()
 
-	log.Printf("Starting to monitor trades for account: %s", b.config.TargetAccount)
+	log.Printf("starting to monitor trades for account: %s", b.config.TargetAccount)
 
 	for {
 		select {
 		case <-b.stopChan:
 			return
 		case <-ticker.C:
-			if err := b.checkForNewTradesWithRetry(); err != nil {
+			if err := b.checkTrades(); err != nil {
 				log.Printf("Error checking trades after retries: %v", err)
+				// Continue monitoring - API failures are expected and recoverable
 			}
 		}
 	}
@@ -95,15 +96,15 @@ func (b *Bot) checkForNewTrades() error {
 			break
 		}
 
-		// Skip if already processed (checked in processFill)
+		// Skip if already processed (checked in process)
 		if b.processedFills[fill.Hash] {
 			continue
 		}
 
-		log.Printf("New fill detected: %s %s %.6f @ %.6f (hash: %s)",
+		log.Printf("new fill detected: %s %s %.6f @ %.6f (hash: %s)",
 			fill.Side, fill.Coin, fill.Size, fill.Price, fill.Hash[:8])
 
-		if err := b.processFill(fill); err != nil {
+		if err := b.process(fill); err != nil {
 			log.Printf("Error processing fill: %v", err)
 		} else {
 			// Only increment if actually processed (not skipped due to threshold)
@@ -114,10 +115,11 @@ func (b *Bot) checkForNewTrades() error {
 	}
 
 	if newFillsCount > 0 {
-		log.Printf("Processed %d new fills", newFillsCount)
+		log.Printf("processed %d new fills", newFillsCount)
 
 		// Show summary every 10 trades
-		if b.paperTrader.TotalTrades > 0 && b.paperTrader.TotalTrades%10 == 0 {
+		totalTrades := b.paperTrader.GetTotalTrades()
+		if totalTrades > 0 && totalTrades%10 == 0 {
 			b.paperTrader.PrintPortfolioSummary()
 		}
 	}
@@ -125,7 +127,7 @@ func (b *Bot) checkForNewTrades() error {
 	return nil
 }
 
-func (b *Bot) processFill(fill *Fill) error {
+func (b *Bot) process(fill *Fill) error {
 	// Skip if we've already processed this fill
 	if b.processedFills[fill.Hash] {
 		return nil
@@ -146,7 +148,7 @@ func (b *Bot) processFill(fill *Fill) error {
 	return nil
 }
 
-func (b *Bot) checkForNewTradesWithRetry() error {
+func (b *Bot) checkTrades() error {
 	maxRetries := 3
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		err := b.checkForNewTrades()
@@ -158,7 +160,7 @@ func (b *Bot) checkForNewTradesWithRetry() error {
 
 		if attempt < maxRetries {
 			waitTime := time.Duration(attempt) * 2 * time.Second
-			log.Printf("Retrying in %v...", waitTime)
+			log.Printf("retrying in %v...", waitTime)
 			time.Sleep(waitTime)
 		}
 	}

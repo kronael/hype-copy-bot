@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type HyperliquidClient struct {
+type Client struct {
 	config     *Config
 	httpClient *http.Client
 	baseURL    string
@@ -42,23 +42,18 @@ type Order struct {
 	Type  string  `json:"orderType"`
 }
 
-func NewHyperliquidClient(config *Config) (*HyperliquidClient, error) {
-	var baseURL string
-	if config.UseTestnet {
-		baseURL = "https://api.hyperliquid-testnet.xyz"
-	} else {
-		baseURL = "https://api.hyperliquid.xyz"
-	}
+func NewClient(config *Config) (*Client, error) {
+	baseURL := "https://api.hyperliquid.xyz"
 
 	privateKeyBytes, err := hex.DecodeString(config.PrivateKey)
 	if err != nil {
-		return nil, fmt.Errorf("invalid private key: %v", err)
+		return nil, fmt.Errorf("invalid private key (must be 64 character hex string): %v", err)
 	}
 
 	privateKey := ed25519.PrivateKey(privateKeyBytes)
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 
-	return &HyperliquidClient{
+	return &Client{
 		config:     config,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		baseURL:    baseURL,
@@ -67,7 +62,7 @@ func NewHyperliquidClient(config *Config) (*HyperliquidClient, error) {
 	}, nil
 }
 
-func (c *HyperliquidClient) GetUserFills(user string) ([]*Fill, error) {
+func (c *Client) GetUserFills(user string) ([]*Fill, error) {
 	payload := map[string]interface{}{
 		"type": "userFills",
 		"user": user,
@@ -86,7 +81,7 @@ func (c *HyperliquidClient) GetUserFills(user string) ([]*Fill, error) {
 	return fills, nil
 }
 
-func (c *HyperliquidClient) PlaceOrder(order *Order) error {
+func (c *Client) PlaceOrder(order *Order) error {
 	payload := map[string]interface{}{
 		"type": "order",
 		"orders": []map[string]interface{}{
@@ -106,15 +101,15 @@ func (c *HyperliquidClient) PlaceOrder(order *Order) error {
 	return err
 }
 
-func (c *HyperliquidClient) makeInfoRequest(payload map[string]interface{}) ([]byte, error) {
+func (c *Client) makeInfoRequest(payload map[string]interface{}) ([]byte, error) {
 	return c.makeRequest("/info", payload, false)
 }
 
-func (c *HyperliquidClient) makeExchangeRequest(payload map[string]interface{}) ([]byte, error) {
+func (c *Client) makeExchangeRequest(payload map[string]interface{}) ([]byte, error) {
 	return c.makeRequest("/exchange", payload, true)
 }
 
-func (c *HyperliquidClient) makeRequest(endpoint string, payload map[string]interface{}, needsAuth bool) ([]byte, error) {
+func (c *Client) makeRequest(endpoint string, payload map[string]interface{}, needsAuth bool) ([]byte, error) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -150,6 +145,6 @@ func (c *HyperliquidClient) makeRequest(endpoint string, payload map[string]inte
 	return body, nil
 }
 
-func (c *HyperliquidClient) Close() {
+func (c *Client) Close() {
 	// Cleanup if needed
 }

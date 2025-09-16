@@ -1,4 +1,4 @@
-module hyperliquid-bot
+module hype-copy-bot
 
 go 1.21
 

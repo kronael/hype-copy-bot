@@ -1,113 +1,18 @@
 # Hyperliquid Trade Following Bot Configuration
 # Copy this file to config.toml and fill in your values
 
-[hyperliquid]
 # Account address to follow for trades
 # Example: The White Whale address (replace with your target)
 target_account = "0xb8b9e3097c8b1dddf9c5ea9d48a7ebeaf09d67d2"
 
-# Your Hyperliquid API credentials
+# Your Hyperliquid API credentials (not needed for paper trading)
 # Get these from https://app.hyperliquid.xyz/API
 api_key = "your_api_key_here"
 private_key = "your_64_character_hex_private_key_here"
 
-# Network configuration
-use_testnet = true  # Set to false for mainnet (DANGEROUS - real trading)
-
-# API endpoints (usually don't need to change)
-# mainnet_url = "https://api.hyperliquid.xyz"
-# testnet_url = "https://api.hyperliquid-testnet.xyz"
-
-[trading]
 # Minimum trade value to copy (in USD)
 # Trades below this threshold will be ignored
 copy_threshold = 1000.0
 
 # Paper trading configuration
 paper_trading_only = true  # Currently only paper trading is supported
-
-# Position size limits (future feature)
-# max_position_size = 10000.0
-# max_total_exposure = 50000.0
-
-[monitoring]
-# How often to check for new trades (seconds)
-poll_interval = 5
-
-# Maximum number of fills to process per check
-max_fills_per_check = 50
-
-# Retry configuration for API failures
-max_retries = 3
-retry_delay_seconds = 2
-
-[logging]
-# Log level: debug, info, warn, error
-level = "info"
-
-# Log format: text, json
-format = "text"
-
-# Enable structured logging
-structured = false
-
-[portfolio]
-# Portfolio summary display interval (number of trades)
-summary_interval = 10
-
-# Number of recent trades to show in summaries
-recent_trades_count = 10
-
-# Enable real-time PnL calculations
-realtime_pnl = true
-
-[alerts]
-# Enable notifications (future feature)
-enabled = false
-
-# Alert thresholds
-# large_trade_threshold = 50000.0
-# pnl_threshold = 1000.0
-
-# Notification methods (future feature)
-# webhook_url = ""
-# discord_webhook = ""
-# telegram_bot_token = ""
-# telegram_chat_id = ""
-
-[risk_management]
-# Risk management features (future implementation)
-enabled = false
-
-# Maximum daily loss limit
-# max_daily_loss = 5000.0
-
-# Position size scaling based on confidence
-# confidence_scaling = true
-
-# Stop-loss configuration
-# enable_stop_loss = false
-# stop_loss_percentage = 0.05  # 5%
-
-[data]
-# Data persistence settings
-save_trade_history = true
-history_file = "data/trade_history.json"
-
-# State persistence for resume functionality
-save_state = true
-state_file = "data/bot_state.json"
-
-# Data compression
-compress_history = true
-
-[performance]
-# Performance optimization settings
-enable_caching = true
-cache_size = 1000
-
-# Concurrent processing (be careful with API rate limits)
-max_concurrent_requests = 1
-
-# Memory management
-gc_interval_minutes = 30

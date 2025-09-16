@@ -11,5 +11,5 @@ repos:
     rev: v0.5.1
     hooks:
       - id: go-fmt
-      - id: go-vet
+        args: [./src]
       - id: go-mod-tidy

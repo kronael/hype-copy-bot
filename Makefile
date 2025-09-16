@@ -17,11 +17,11 @@ prepare:
 
 # Build the binary
 build: prepare
-	go build -o $(BINARY_NAME) .
+	go build -o $(BINARY_NAME) ./src
 
 # Run all tests
 test:
-	go test -v ./...
+	go test -timeout=30s ./src/...
 
 # Clean build artifacts
 clean:
@@ -48,4 +48,4 @@ help:
 	@echo "  HYPERLIQUID_API_KEY        - API key (required)"
 	@echo "  HYPERLIQUID_PRIVATE_KEY    - Private key (required)"
 	@echo "  HYPERLIQUID_USE_TESTNET    - Use testnet (default: false)"
-	@echo "  HYPERLIQUID_COPY_THRESHOLD - Minimum trade value (default: 0.01)"
+	@echo "  HYPERLIQUID_THRESHOLD      - Minimum trade value (default: 0.01)"
