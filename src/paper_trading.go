@@ -11,16 +11,17 @@ import (
 )
 
 type PaperTrader struct {
-	mu               sync.Mutex
-	Positions        map[string]*Position
-	TotalRealizedPnL float64
-	TotalTrades      int
-	StartTime        time.Time
-	TradeHistory     []*PaperTrade
-	LastTradeTime    map[string]time.Time
-	PendingFills     map[string][]*Fill
-	MinTradeInterval time.Duration
-	MinTradeValue    float64
+	mu                sync.Mutex
+	Positions         map[string]*Position
+	TotalRealizedPnL  float64
+	TotalTrades       int
+	StartTime         time.Time
+	TradeHistory      []*PaperTrade
+	LastTradeTime     map[string]time.Time
+	PendingFills      map[string][]*Fill
+	MinTradeInterval  time.Duration
+	VolumeThreshold   float64 // Dollar volume threshold to trigger trade
+	PendingVolume     map[string]float64
 }
 
 type Position struct {
@@ -97,8 +98,9 @@ func NewPaperTrader() *PaperTrader {
 		TradeHistory:     make([]*PaperTrade, 0),
 		LastTradeTime:    make(map[string]time.Time),
 		PendingFills:     make(map[string][]*Fill),
+		PendingVolume:    make(map[string]float64),
 		MinTradeInterval: 60 * time.Second, // 1 minute minimum between trades
-		MinTradeValue:    100.0,            // $100 minimum trade value
+		VolumeThreshold:  1000.0,           // $1000 volume threshold to trigger trade
 	}
 }
 
@@ -110,8 +112,9 @@ func NewTestPaperTrader() *PaperTrader {
 		TradeHistory:     make([]*PaperTrade, 0),
 		LastTradeTime:    make(map[string]time.Time),
 		PendingFills:     make(map[string][]*Fill),
+		PendingVolume:    make(map[string]float64),
 		MinTradeInterval: 1 * time.Millisecond, // Almost immediate for tests
-		MinTradeValue:    0.01,                 // Very small minimum for tests
+		VolumeThreshold:  50000.0,              // Higher threshold to reduce spam in stress tests
 	}
 }
 
@@ -119,15 +122,27 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 	pt.mu.Lock()
 	defer pt.mu.Unlock()
 
+	// Skip zero-size trades entirely
+	if fill.Size == 0 {
+		return
+	}
+
 	// Add fill to pending queue
 	if pt.PendingFills[fill.Coin] == nil {
 		pt.PendingFills[fill.Coin] = make([]*Fill, 0)
 	}
 	pt.PendingFills[fill.Coin] = append(pt.PendingFills[fill.Coin], fill)
 
-	// Check if enough time has passed since last trade
+	// Add to pending volume
+	fillVolume := fill.Size * fill.Price
+	pt.PendingVolume[fill.Coin] += fillVolume
+
+	// Check if we should process trades (volume threshold OR time threshold)
 	lastTime, exists := pt.LastTradeTime[fill.Coin]
-	if !exists || time.Since(lastTime) >= pt.MinTradeInterval {
+	shouldProcessByTime := !exists || time.Since(lastTime) >= pt.MinTradeInterval
+	shouldProcessByVolume := pt.PendingVolume[fill.Coin] >= pt.VolumeThreshold
+
+	if shouldProcessByVolume || shouldProcessByTime {
 		pt.processAggregatedFills(fill.Coin)
 	}
 }
@@ -161,11 +176,7 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 		}
 	}
 
-	// Skip if aggregated size is too small
-	if math.Abs(totalValue) < pt.MinTradeValue {
-		pt.PendingFills[coin] = nil
-		return
-	}
+	// Always process - we've already hit the volume or time threshold
 
 	// Calculate volume-weighted average price
 	avgPrice := totalValue / math.Abs(totalSize)
@@ -210,8 +221,9 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 	// Update last trade time
 	pt.LastTradeTime[coin] = time.Now()
 
-	// Clear pending fills
+	// Clear pending fills and volume
 	pt.PendingFills[coin] = nil
+	pt.PendingVolume[coin] = 0
 
 	// Print trade with proper formatting
 	pt.printTrade(trade, action)
@@ -455,6 +467,13 @@ func (pt *PaperTrader) ForceProcessPendingFills() {
 			pt.processAggregatedFills(coin)
 		}
 	}
+}
+
+// SetVolumeThreshold sets the volume threshold for triggering trades
+func (pt *PaperTrader) SetVolumeThreshold(threshold float64) {
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
+	pt.VolumeThreshold = threshold
 }
 
 // SetMinTradeInterval sets the minimum time between trades
