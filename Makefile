@@ -1,7 +1,7 @@
 # Default target
 .DEFAULT_GOAL := help
 
-.PHONY: build test clean image prepare help
+.PHONY: build test clean image prepare prepare-dev fmt lint help
 
 # Binary name
 BINARY_NAME = main
@@ -14,6 +14,11 @@ DOCKER_TAG = latest
 prepare:
 	go mod download
 	go mod tidy
+
+# Prepare development environment
+prepare-dev: prepare
+	@echo "Installing development tools..."
+	go install golang.org/x/tools/cmd/goimports@latest
 
 # Build the binary
 build: prepare
@@ -28,6 +33,17 @@ clean:
 	go clean
 	rm -f $(BINARY_NAME)
 
+# Format code
+fmt:
+	@echo "Formatting Go code..."
+	go fmt ./...
+	goimports -w .
+
+# Lint code
+lint: fmt
+	@echo "Running go vet..."
+	go vet ./...
+
 # Docker image
 image:
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
@@ -38,8 +54,11 @@ help:
 	@echo ""
 	@echo "Commands:"
 	@echo "  prepare       - Download and tidy dependencies"
+	@echo "  prepare-dev   - Install development tools"
 	@echo "  build         - Build binary"
 	@echo "  test          - Run all tests"
+	@echo "  fmt           - Format code"
+	@echo "  lint          - Lint code"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  image         - Build Docker image"
 	@echo ""

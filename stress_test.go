@@ -59,7 +59,10 @@ func TestExtremeMarketPrices(t *testing.T) {
 
 			position := pt.Positions["TEST"]
 			if math.IsNaN(position.AvgEntryPrice) || math.IsInf(position.AvgEntryPrice, 0) {
-				t.Errorf("Average price became NaN or Inf with price %f: got %f", tt.price, position.AvgEntryPrice)
+				t.Errorf(
+					"Average price became NaN or Inf with price %f: got %f",
+					tt.price, position.AvgEntryPrice,
+				)
 			}
 
 			unrealizedPnL := pt.calculateUnrealizedPnL(position)
@@ -168,14 +171,20 @@ func TestRapidPositionFlips(t *testing.T) {
 		// Alternate between long and short positions
 		if i%2 == 0 {
 			// Build long position
-			fill := createTestFill("BTC", "B", 10.0, basePrice+float64(i)*10, "0.0", time.Now().Unix()+int64(i))
+			fill := createTestFill(
+				"BTC", "B", 10.0, basePrice+float64(i)*10,
+				"0.0", time.Now().Unix()+int64(i),
+			)
 			fill.Hash = fmt.Sprintf("flip_test_%d", i)
 			pt.ProcessFill(fill)
 		} else {
 			// Flip to short by selling more than current position
 			position := pt.Positions["BTC"]
 			flipSize := math.Abs(position.Size) + 5.0 // Close current + go short 5
-			fill := createTestFill("BTC", "A", flipSize, basePrice+float64(i)*10, "50.0", time.Now().Unix()+int64(i))
+			fill := createTestFill(
+				"BTC", "A", flipSize, basePrice+float64(i)*10,
+				"50.0", time.Now().Unix()+int64(i),
+			)
 			fill.Hash = fmt.Sprintf("flip_test_%d", i)
 			pt.ProcessFill(fill)
 		}
@@ -342,7 +351,10 @@ func TestRandomizedTradingStress(t *testing.T) {
 		price := rand.Float64()*100000 + 1000 // 1000 to 101000
 		pnl := (rand.Float64() - 0.5) * 10000 // -5000 to 5000
 
-		fill := createTestFill(coin, side, size, price, fmt.Sprintf("%.2f", pnl), time.Now().Unix()+int64(i))
+		fill := createTestFill(
+			coin, side, size, price,
+			fmt.Sprintf("%.2f", pnl), time.Now().Unix()+int64(i),
+		)
 		fill.Hash = fmt.Sprintf("random_%d", i)
 
 		pt.ProcessFill(fill)
@@ -351,11 +363,17 @@ func TestRandomizedTradingStress(t *testing.T) {
 		if i%50 == 0 {
 			for coinName, position := range pt.Positions {
 				if math.IsNaN(position.Size) || math.IsInf(position.Size, 0) {
-					t.Fatalf("Random stress test: %s position corrupted at trade %d: %f", coinName, i, position.Size)
+					t.Fatalf(
+						"Random stress test: %s position corrupted at trade %d: %f",
+						coinName, i, position.Size,
+					)
 				}
 
 				if position.AvgEntryPrice < 0 && position.Size != 0 {
-					t.Fatalf("Random stress test: %s negative avg price at trade %d: %f", coinName, i, position.AvgEntryPrice)
+					t.Fatalf(
+						"Random stress test: %s negative avg price at trade %d: %f",
+						coinName, i, position.AvgEntryPrice,
+					)
 				}
 			}
 		}

@@ -356,7 +356,12 @@ func TestPnLStringParsing(t *testing.T) {
 }
 
 // Helper function to create test fills
-func createTestFill(coin, side string, size, price float64, closedPnl string, timestamp int64) *Fill {
+func createTestFill(
+	coin, side string,
+	size, price float64,
+	closedPnl string,
+	timestamp int64,
+) *Fill {
 	return &Fill{
 		Coin:      coin,
 		Side:      side,

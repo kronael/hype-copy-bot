@@ -325,18 +325,42 @@ func TestRealWorldTradingScenario(t *testing.T) {
 	// Simulate realistic trading sequence based on actual data
 	fills := []*Fill{
 		// ETH accumulation phase
-		{Coin: "ETH", Side: "B", Size: 10.3, Price: 4475.1, ClosedPnl: "0.0", Hash: "fill1", Time: time.Now().Unix() * 1000},
-		{Coin: "ETH", Side: "B", Size: 22.27, Price: 4491.7, ClosedPnl: "0.0", Hash: "fill2", Time: time.Now().Unix() * 1000},
-		{Coin: "ETH", Side: "B", Size: 82.49, Price: 4635.8, ClosedPnl: "0.0", Hash: "fill3", Time: time.Now().Unix() * 1000},
+		{
+			Coin: "ETH", Side: "B", Size: 10.3, Price: 4475.1,
+			ClosedPnl: "0.0", Hash: "fill1", Time: time.Now().Unix() * 1000,
+		},
+		{
+			Coin: "ETH", Side: "B", Size: 22.27, Price: 4491.7,
+			ClosedPnl: "0.0", Hash: "fill2", Time: time.Now().Unix() * 1000,
+		},
+		{
+			Coin: "ETH", Side: "B", Size: 82.49, Price: 4635.8,
+			ClosedPnl: "0.0", Hash: "fill3", Time: time.Now().Unix() * 1000,
+		},
 
 		// ETH profit taking
-		{Coin: "ETH", Side: "A", Size: 38.05, Price: 4707.5, ClosedPnl: "1096.23", Hash: "fill4", Time: time.Now().Unix() * 1000},
-		{Coin: "ETH", Side: "A", Size: 82.49, Price: 4712.0, ClosedPnl: "2747.89", Hash: "fill5", Time: time.Now().Unix() * 1000},
+		{
+			Coin: "ETH", Side: "A", Size: 38.05, Price: 4707.5,
+			ClosedPnl: "1096.23", Hash: "fill4", Time: time.Now().Unix() * 1000,
+		},
+		{
+			Coin: "ETH", Side: "A", Size: 82.49, Price: 4712.0,
+			ClosedPnl: "2747.89", Hash: "fill5", Time: time.Now().Unix() * 1000,
+		},
 
 		// BTC short building
-		{Coin: "BTC", Side: "A", Size: 7.22, Price: 114000.0, ClosedPnl: "11704.84", Hash: "fill6", Time: time.Now().Unix() * 1000},
-		{Coin: "BTC", Side: "A", Size: 10.52, Price: 114000.0, ClosedPnl: "17052.34", Hash: "fill7", Time: time.Now().Unix() * 1000},
-		{Coin: "BTC", Side: "A", Size: 2.71, Price: 114000.0, ClosedPnl: "4399.96", Hash: "fill8", Time: time.Now().Unix() * 1000},
+		{
+			Coin: "BTC", Side: "A", Size: 7.22, Price: 114000.0,
+			ClosedPnl: "11704.84", Hash: "fill6", Time: time.Now().Unix() * 1000,
+		},
+		{
+			Coin: "BTC", Side: "A", Size: 10.52, Price: 114000.0,
+			ClosedPnl: "17052.34", Hash: "fill7", Time: time.Now().Unix() * 1000,
+		},
+		{
+			Coin: "BTC", Side: "A", Size: 2.71, Price: 114000.0,
+			ClosedPnl: "4399.96", Hash: "fill8", Time: time.Now().Unix() * 1000,
+		},
 	}
 
 	for _, fill := range fills {
@@ -392,8 +416,14 @@ func TestErrorHandling(t *testing.T) {
 
 	// Test with malformed fill data
 	malformedFills := []*Fill{
-		{Coin: "", Side: "B", Size: 1.0, Price: 50000.0, ClosedPnl: "invalid", Hash: "test1", Time: time.Now().Unix() * 1000},
-		{Coin: "BTC", Side: "", Size: -1.0, Price: 0.0, ClosedPnl: "0.0", Hash: "test2", Time: time.Now().Unix() * 1000},
+		{
+			Coin: "", Side: "B", Size: 1.0, Price: 50000.0,
+			ClosedPnl: "invalid", Hash: "test1", Time: time.Now().Unix() * 1000,
+		},
+		{
+			Coin: "BTC", Side: "", Size: -1.0, Price: 0.0,
+			ClosedPnl: "0.0", Hash: "test2", Time: time.Now().Unix() * 1000,
+		},
 		{Coin: "ETH", Side: "B", Size: 1.0, Price: 50000.0, ClosedPnl: "", Hash: "", Time: 0},
 	}
 

@@ -1,12 +1,16 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository.
 
-This represents accumulated wisdom from multiple projects and should be adapted thoughtfully to this codebase.
+This represents accumulated wisdom from multiple projects and should be
+adapted thoughtfully to this codebase.
 
 ## Project Overview
 
-This is a Hyperliquid trade following bot (hype-copy-bot) that monitors successful traders and provides comprehensive paper trading analytics with real-time position management.
+This is a Hyperliquid trade following bot (hype-copy-bot) that monitors
+successful traders and provides comprehensive paper trading analytics with
+real-time position management.
 
 ## Key Principles
 
@@ -32,6 +36,7 @@ This is a Hyperliquid trade following bot (hype-copy-bot) that monitors successf
 - Just do it, don't ask
 - Short CLI flags and file extensions (.json not .jsonl)
 - No fancy outputs - no progress bars, spinners, or animations unless essential
+- Stick to 80-character line length, max 100 if absolutely necessary
 
 **Error handling philosophy**
 
@@ -43,7 +48,8 @@ This is a Hyperliquid trade following bot (hype-copy-bot) that monitors successf
 
 ## Development Setup
 
-**Important:** This project uses Go 1.19+ with specific dependencies for Hyperliquid API integration.
+**Important:** This project uses Go 1.19+ with specific dependencies for
+Hyperliquid API integration.
 
 ### Configuration Setup
 
@@ -102,7 +108,8 @@ The codebase consists of modular Go files:
 ## Data Flow
 
 ```
-API Polling (5s) -> Fill Detection -> Duplicate Check -> Threshold Filter -> Position Update -> PnL Calculation -> Trade Record
+API Polling (5s) -> Fill Detection -> Duplicate Check -> Threshold Filter ->
+Position Update -> PnL Calculation -> Trade Record
 ```
 
 ### Key Functions

@@ -1,6 +1,12 @@
 # hype-copy-bot
 
-A sophisticated trade following bot for Hyperliquid DEX that monitors successful traders and provides comprehensive paper trading analytics with real-time position management.
+A sophisticated trade following bot for Hyperliquid DEX that monitors
+successful traders and provides comprehensive paper trading analytics with
+real-time position management.
+
+> **⚠️ Experimental Project**: This project is an experiment in using Claude AI
+> for software development. The code has been primarily generated and refined
+> through AI assistance.
 
 ## 🎯 Features
 

@@ -109,7 +109,11 @@ func (c *Client) makeExchangeRequest(payload map[string]interface{}) ([]byte, er
 	return c.makeRequest("/exchange", payload, true)
 }
 
-func (c *Client) makeRequest(endpoint string, payload map[string]interface{}, needsAuth bool) ([]byte, error) {
+func (c *Client) makeRequest(
+	endpoint string,
+	payload map[string]interface{},
+	needsAuth bool,
+) ([]byte, error) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

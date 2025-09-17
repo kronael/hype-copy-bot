@@ -84,12 +84,18 @@ func TestComprehensivePnLAccounting(t *testing.T) {
 	fmt.Printf("   Position Size: %.2f (should be 2.0)\n", pos.Size)
 	fmt.Printf("   VWAP: $%.2f (should be unchanged: $%.2f)\n", pos.AvgEntryPrice, expectedVWAP)
 	fmt.Printf("   Last Price: $%.2f\n", pos.LastPrice)
-	fmt.Printf("   Realized PnL (this trade): $%.2f (expected: $%.2f)\n", expectedRealizedPnL, expectedRealizedPnL)
+	fmt.Printf(
+		"   Realized PnL (this trade): $%.2f (expected: $%.2f)\n",
+		expectedRealizedPnL, expectedRealizedPnL,
+	)
 	fmt.Printf("   Position Realized PnL: $%.2f\n", pos.RealizedPnL)
 	fmt.Printf("   Portfolio Realized PnL: $%.2f\n", pt.TotalRealizedPnL)
 
 	if pos.Size != 2.0 {
-		t.Errorf("Position size after partial close: got %.2f, want 2.0", pos.Size)
+		t.Errorf(
+			"Position size after partial close: got %.2f, want 2.0",
+			pos.Size,
+		)
 	}
 	if math.Abs(pos.AvgEntryPrice-expectedVWAP) > 0.01 {
 		t.Errorf("VWAP changed on partial close: got $%.2f, should stay $%.2f", pos.AvgEntryPrice, expectedVWAP)

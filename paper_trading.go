@@ -326,14 +326,21 @@ func (pt *PaperTrader) determineAction(oldSize, newSize float64) PositionAction 
 	}
 
 	// Same direction, smaller position
-	if (oldSize > 0 && newSize < oldSize && newSize > 0) || (oldSize < 0 && newSize > oldSize && newSize < 0) {
+	if (oldSize > 0 && newSize < oldSize && newSize > 0) ||
+		(oldSize < 0 && newSize > oldSize && newSize < 0) {
 		return ActionReduce
 	}
 
 	return ActionAdd // default
 }
 
-func (pt *PaperTrader) calculateRealizedPnL(position *Position, tradeSize float64, price float64, closedPnL float64, action PositionAction) float64 {
+func (pt *PaperTrader) calculateRealizedPnL(
+	position *Position,
+	tradeSize float64,
+	price float64,
+	closedPnL float64,
+	action PositionAction,
+) float64 {
 	// ADD actions never realize PnL - we're just building the position
 	if action == ActionAdd || action == ActionOpen {
 		return 0
@@ -367,7 +374,12 @@ func (pt *PaperTrader) calculateRealizedPnL(position *Position, tradeSize float6
 	return 0
 }
 
-func (pt *PaperTrader) updatePosition(position *Position, tradeSize float64, price float64, realizedPnL float64) {
+func (pt *PaperTrader) updatePosition(
+	position *Position,
+	tradeSize float64,
+	price float64,
+	realizedPnL float64,
+) {
 	oldSize := position.Size
 	newSize := oldSize + tradeSize
 

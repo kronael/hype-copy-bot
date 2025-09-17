@@ -114,7 +114,10 @@ func TestCashflowAndBankrollManagement(t *testing.T) {
 	// Verify accounting
 	expectedPnL := pt.TotalRealizedPnL + pt.calculateUnrealizedPnL(pos)
 	if fmt.Sprintf("%.2f", totalPnL) != fmt.Sprintf("%.2f", expectedPnL) {
-		t.Errorf("P&L accounting mismatch: portfolio P&L $%.2f != realized+unrealized $%.2f", totalPnL, expectedPnL)
+		t.Errorf(
+			"P&L accounting mismatch: portfolio P&L $%.2f != realized+unrealized $%.2f",
+			totalPnL, expectedPnL,
+		)
 	}
 
 	fmt.Println("\n✅ Key Insights:")
