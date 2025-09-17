@@ -17,6 +17,10 @@ type PaperTrader struct {
 	TotalTrades      int
 	StartTime        time.Time
 	TradeHistory     []*PaperTrade
+	LastTradeTime    map[string]time.Time
+	PendingFills     map[string][]*Fill
+	MinTradeInterval time.Duration
+	MinTradeValue    float64
 }
 
 type Position struct {
@@ -88,9 +92,26 @@ func (pa PositionAction) Emoji() string {
 
 func NewPaperTrader() *PaperTrader {
 	return &PaperTrader{
-		Positions:    make(map[string]*Position),
-		StartTime:    time.Now(),
-		TradeHistory: make([]*PaperTrade, 0),
+		Positions:        make(map[string]*Position),
+		StartTime:        time.Now(),
+		TradeHistory:     make([]*PaperTrade, 0),
+		LastTradeTime:    make(map[string]time.Time),
+		PendingFills:     make(map[string][]*Fill),
+		MinTradeInterval: 60 * time.Second, // 1 minute minimum between trades
+		MinTradeValue:    100.0,            // $100 minimum trade value
+	}
+}
+
+// NewTestPaperTrader creates a paper trader optimized for testing
+func NewTestPaperTrader() *PaperTrader {
+	return &PaperTrader{
+		Positions:        make(map[string]*Position),
+		StartTime:        time.Now(),
+		TradeHistory:     make([]*PaperTrade, 0),
+		LastTradeTime:    make(map[string]time.Time),
+		PendingFills:     make(map[string][]*Fill),
+		MinTradeInterval: 1 * time.Millisecond, // Almost immediate for tests
+		MinTradeValue:    0.01,                 // Very small minimum for tests
 	}
 }
 
@@ -98,31 +119,72 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 	pt.mu.Lock()
 	defer pt.mu.Unlock()
 
-	// Parse closed PnL
-	closedPnL, err := strconv.ParseFloat(fill.ClosedPnl, 64)
-	if err != nil {
-		closedPnL = 0
+	// Add fill to pending queue
+	if pt.PendingFills[fill.Coin] == nil {
+		pt.PendingFills[fill.Coin] = make([]*Fill, 0)
+	}
+	pt.PendingFills[fill.Coin] = append(pt.PendingFills[fill.Coin], fill)
+
+	// Check if enough time has passed since last trade
+	lastTime, exists := pt.LastTradeTime[fill.Coin]
+	if !exists || time.Since(lastTime) >= pt.MinTradeInterval {
+		pt.processAggregatedFills(fill.Coin)
+	}
+}
+
+func (pt *PaperTrader) processAggregatedFills(coin string) {
+	fills := pt.PendingFills[coin]
+	if len(fills) == 0 {
+		return
 	}
 
+	// Calculate aggregated values
+	var totalSize, totalValue, totalClosedPnL float64
+	var lastPrice float64
+	var side string
+	var lastTime int64
+
+	for _, fill := range fills {
+		size := fill.Size
+		if fill.Side == "A" { // sell
+			size = -fill.Size
+		}
+		totalSize += size
+		totalValue += math.Abs(size) * fill.Price
+		lastPrice = fill.Price
+		side = fill.Side
+		lastTime = fill.Time
+
+		// Sum up closed PnL
+		if closedPnL, err := strconv.ParseFloat(fill.ClosedPnl, 64); err == nil {
+			totalClosedPnL += closedPnL
+		}
+	}
+
+	// Skip if aggregated size is too small
+	if math.Abs(totalValue) < pt.MinTradeValue {
+		pt.PendingFills[coin] = nil
+		return
+	}
+
+	// Calculate volume-weighted average price
+	avgPrice := totalValue / math.Abs(totalSize)
+
 	// Get or create position
-	position := pt.getPosition(fill.Coin)
+	position := pt.getPosition(coin)
 
 	// Calculate trade details
 	oldSize := position.Size
-	tradeSize := fill.Size
-	if fill.Side == "A" { // sell
-		tradeSize = -fill.Size
-	}
-	newSize := oldSize + tradeSize
+	newSize := oldSize + totalSize
 
 	// Determine action type
 	action := pt.determineAction(oldSize, newSize)
 
 	// Calculate realized PnL for position changes
-	realizedPnL := pt.calculateRealizedPnL(position, tradeSize, fill.Price, closedPnL)
+	realizedPnL := pt.calculateRealizedPnL(position, totalSize, avgPrice, totalClosedPnL, action)
 
 	// Update position
-	pt.updatePosition(position, tradeSize, fill.Price, realizedPnL)
+	pt.updatePosition(position, totalSize, avgPrice, realizedPnL)
 
 	// Update totals
 	pt.TotalTrades++
@@ -130,12 +192,12 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 
 	// Create trade record
 	trade := &PaperTrade{
-		Timestamp:     time.Unix(fill.Time/1000, 0),
-		Coin:          fill.Coin,
+		Timestamp:     time.Unix(lastTime/1000, 0),
+		Coin:          coin,
 		Action:        action.String(),
-		Side:          map[string]string{"B": "BUY", "A": "SELL"}[fill.Side],
-		Size:          fill.Size,
-		Price:         fill.Price,
+		Side:          map[string]string{"B": "BUY", "A": "SELL"}[side],
+		Size:          math.Abs(totalSize),
+		Price:         avgPrice,
 		RealizedPnL:   realizedPnL,
 		PositionSize:  position.Size,
 		UnrealizedPnL: pt.calculateUnrealizedPnL(position),
@@ -143,7 +205,13 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 	pt.TradeHistory = append(pt.TradeHistory, trade)
 
 	// Update last price for unrealized PnL
-	position.LastPrice = fill.Price
+	position.LastPrice = lastPrice
+
+	// Update last trade time
+	pt.LastTradeTime[coin] = time.Now()
+
+	// Clear pending fills
+	pt.PendingFills[coin] = nil
 
 	// Print trade with proper formatting
 	pt.printTrade(trade, action)
@@ -196,9 +264,14 @@ func (pt *PaperTrader) determineAction(oldSize, newSize float64) PositionAction 
 	return ActionAdd // default
 }
 
-func (pt *PaperTrader) calculateRealizedPnL(position *Position, tradeSize float64, price float64, closedPnL float64) float64 {
-	// Use the closed PnL from the API if available and not zero
-	if closedPnL != 0 {
+func (pt *PaperTrader) calculateRealizedPnL(position *Position, tradeSize float64, price float64, closedPnL float64, action PositionAction) float64 {
+	// ADD actions never realize PnL - we're just building the position
+	if action == ActionAdd || action == ActionOpen {
+		return 0
+	}
+
+	// Only use API's closedPnL for position reductions
+	if closedPnL != 0 && (action == ActionReduce || action == ActionClose || action == ActionReverse) {
 		return closedPnL
 	}
 
@@ -206,11 +279,11 @@ func (pt *PaperTrader) calculateRealizedPnL(position *Position, tradeSize float6
 	if (position.Size > 0 && tradeSize < 0) || (position.Size < 0 && tradeSize > 0) {
 		// Calculate based on average entry price
 		if position.AvgEntryPrice > 0 {
-			reducedSize := tradeSize
-			if position.Size > 0 {
-				reducedSize = -tradeSize // selling long position
-			} else {
-				reducedSize = -tradeSize // covering short position
+			reducedSize := math.Abs(tradeSize)
+
+			// Ensure we don't reduce more than the position size
+			if reducedSize > math.Abs(position.Size) {
+				reducedSize = math.Abs(position.Size)
 			}
 
 			pnlPerUnit := price - position.AvgEntryPrice
@@ -370,6 +443,25 @@ func (pt *PaperTrader) GetTotalTrades() int {
 	pt.mu.Lock()
 	defer pt.mu.Unlock()
 	return pt.TotalTrades
+}
+
+// ForceProcessPendingFills processes all pending fills immediately
+func (pt *PaperTrader) ForceProcessPendingFills() {
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
+
+	for coin := range pt.PendingFills {
+		if len(pt.PendingFills[coin]) > 0 {
+			pt.processAggregatedFills(coin)
+		}
+	}
+}
+
+// SetMinTradeInterval sets the minimum time between trades
+func (pt *PaperTrader) SetMinTradeInterval(interval time.Duration) {
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
+	pt.MinTradeInterval = interval
 }
 
 func (pt *PaperTrader) PrintRecentTrades(count int) {

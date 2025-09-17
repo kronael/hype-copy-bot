@@ -7,7 +7,7 @@ import (
 )
 
 func TestPositionActionDetermination(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	tests := []struct {
 		name     string
@@ -39,7 +39,7 @@ func TestPositionActionDetermination(t *testing.T) {
 }
 
 func TestVolumeWeightedAveragePrice(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Test building a long position
 	fills := []*Fill{
@@ -51,6 +51,7 @@ func TestVolumeWeightedAveragePrice(t *testing.T) {
 	for _, fill := range fills {
 		pt.ProcessFill(fill)
 	}
+	pt.ForceProcessPendingFills() // Ensure all fills are processed
 
 	position := pt.Positions["BTC"]
 	expectedSize := 4.0
@@ -66,7 +67,7 @@ func TestVolumeWeightedAveragePrice(t *testing.T) {
 }
 
 func TestRealizedPnLCalculation(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Build position then reduce it
 	fills := []*Fill{
@@ -95,7 +96,7 @@ func TestRealizedPnLCalculation(t *testing.T) {
 }
 
 func TestUnrealizedPnLCalculation(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Buy 1 BTC at 50000
 	fill := createTestFill("BTC", "B", 1.0, 50000.0, "0.0", time.Now().Unix())
@@ -114,7 +115,7 @@ func TestUnrealizedPnLCalculation(t *testing.T) {
 }
 
 func TestPositionReversal(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	fills := []*Fill{
 		// Build long position: 2 BTC at 50000
@@ -141,7 +142,7 @@ func TestPositionReversal(t *testing.T) {
 }
 
 func TestWhaleScenario(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Simulate The White Whale's ETH trading scenario
 	fills := []*Fill{
@@ -181,7 +182,7 @@ func TestWhaleScenario(t *testing.T) {
 }
 
 func TestMultipleAssetPortfolio(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	fills := []*Fill{
 		// BTC long position
@@ -262,24 +263,25 @@ func TestSmallTradeFiltering(t *testing.T) {
 }
 
 func TestZeroAndNegativeSizes(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Test zero size trade (should be ignored)
 	zeroFill := createTestFill("BTC", "B", 0.0, 50000.0, "0.0", time.Now().Unix())
 	pt.ProcessFill(zeroFill)
+	pt.ForceProcessPendingFills() // Ensure pending fills are processed
 
 	position := pt.Positions["BTC"]
-	if position.Size != 0 {
+	if position != nil && position.Size != 0 {
 		t.Errorf("Zero size trade affected position: size = %f, want 0", position.Size)
 	}
 
-	if pt.GetTotalTrades() != 1 {
-		t.Errorf("Zero size trade not recorded: trades = %d, want 1", pt.GetTotalTrades())
+	if pt.GetTotalTrades() != 0 {
+		t.Errorf("Zero size trade should be ignored: trades = %d, want 0", pt.GetTotalTrades())
 	}
 }
 
 func TestHighFrequencyTrading(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Simulate rapid fire trades like The White Whale
 	baseTime := time.Now().Unix()
@@ -315,7 +317,7 @@ func TestHighFrequencyTrading(t *testing.T) {
 }
 
 func TestPnLStringParsing(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	tests := []struct {
 		name     string
@@ -356,7 +358,7 @@ func createTestFill(coin, side string, size, price float64, closedPnl string, ti
 
 // Benchmark test for performance
 func BenchmarkPaperTraderProcessFill(b *testing.B) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 	fill := createTestFill("BTC", "B", 1.0, 50000.0, "100.0", time.Now().Unix())
 
 	b.ResetTimer()
@@ -369,7 +371,7 @@ func BenchmarkPaperTraderProcessFill(b *testing.B) {
 }
 
 func BenchmarkPositionActionDetermination(b *testing.B) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

@@ -10,7 +10,7 @@ import (
 )
 
 func TestExtremePositionSizes(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	extremeTests := []struct {
 		name string
@@ -40,7 +40,7 @@ func TestExtremePositionSizes(t *testing.T) {
 }
 
 func TestExtremeMarketPrices(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	priceTests := []struct {
 		name  string
@@ -71,7 +71,7 @@ func TestExtremeMarketPrices(t *testing.T) {
 }
 
 func TestConcurrentPaperTrading(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 	numGoroutines := 100
 	tradesPerGoroutine := 10
 
@@ -126,7 +126,7 @@ func TestConcurrentPaperTrading(t *testing.T) {
 }
 
 func TestMemoryLeakPrevention(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Simulate very long running session
 	numTrades := 10000
@@ -159,7 +159,7 @@ func TestMemoryLeakPrevention(t *testing.T) {
 }
 
 func TestRapidPositionFlips(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Simulate rapid position flips like high-frequency trading
 	basePrice := 50000.0
@@ -194,7 +194,7 @@ func TestRapidPositionFlips(t *testing.T) {
 }
 
 func TestFloatingPointPrecision(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Test with values that could cause floating point precision issues
 	precisionTests := []struct {
@@ -236,7 +236,7 @@ func TestFloatingPointPrecision(t *testing.T) {
 }
 
 func TestTimeOrderingEdgeCases(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	now := time.Now().Unix()
 
@@ -265,7 +265,7 @@ func TestTimeOrderingEdgeCases(t *testing.T) {
 }
 
 func TestNegativePnLHandling(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Test sequence that should generate losses
 	fills := []*Fill{
@@ -292,7 +292,7 @@ func TestNegativePnLHandling(t *testing.T) {
 }
 
 func TestMassiveVolumeHandling(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Test with very large trade volumes
 	largeFill := createTestFill("WHALE", "B", 1e6, 50000.0, "0.0", time.Now().Unix())
@@ -327,7 +327,7 @@ func TestMassiveVolumeHandling(t *testing.T) {
 }
 
 func TestRandomizedTradingStress(t *testing.T) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 	rand.Seed(42) // Deterministic randomness
 
 	coins := []string{"BTC", "ETH", "SOL", "AVAX", "DOT"}
@@ -379,7 +379,7 @@ func TestRandomizedTradingStress(t *testing.T) {
 
 // Stress test for performance under heavy load
 func BenchmarkHighFrequencyTrading(b *testing.B) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Pre-generate fills to avoid allocation overhead in benchmark
 	fills := make([]*Fill, b.N)
@@ -407,7 +407,7 @@ func BenchmarkHighFrequencyTrading(b *testing.B) {
 }
 
 func BenchmarkUnrealizedPnLCalculation(b *testing.B) {
-	pt := NewPaperTrader()
+	pt := NewTestPaperTrader()
 
 	// Setup position
 	fill := createTestFill("BTC", "B", 100.0, 50000.0, "0.0", time.Now().Unix())
