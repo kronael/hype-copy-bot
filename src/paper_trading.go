@@ -11,17 +11,17 @@ import (
 )
 
 type PaperTrader struct {
-	mu                sync.Mutex
-	Positions         map[string]*Position
-	TotalRealizedPnL  float64
-	TotalTrades       int
-	StartTime         time.Time
-	TradeHistory      []*PaperTrade
-	LastTradeTime     map[string]time.Time
-	PendingFills      map[string][]*Fill
-	MinTradeInterval  time.Duration
-	VolumeThreshold   float64 // Dollar volume threshold to trigger trade
-	PendingVolume     map[string]float64
+	mu               sync.Mutex
+	Positions        map[string]*Position
+	TotalRealizedPnL float64
+	TotalTrades      int
+	StartTime        time.Time
+	TradeHistory     []*PaperTrade
+	LastTradeTime    map[string]time.Time
+	PendingFills     map[string][]*Fill
+	MinTradeInterval time.Duration
+	VolumeThreshold  float64 // Dollar volume threshold to trigger trade
+	PendingVolume    map[string]float64
 }
 
 type Position struct {
