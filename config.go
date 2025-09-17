@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
@@ -14,6 +16,22 @@ type Config struct {
 	PrivateKey       string  `toml:"private_key"`
 	CopyThreshold    float64 `toml:"copy_threshold"`
 	PaperTradingOnly bool    `toml:"paper_trading_only"`
+	DataDir          string  `toml:"data_dir"`
+}
+
+// GetDataDir returns the full data directory path with PREFIX env var support
+func (c *Config) GetDataDir() string {
+	dataDir := c.DataDir
+	if dataDir == "" {
+		dataDir = "data/hype-copy-bot" // default
+	}
+
+	prefix := os.Getenv("PREFIX")
+	if prefix == "" {
+		prefix = "/srv" // default
+	}
+
+	return filepath.Join(prefix, dataDir)
 }
 
 func loadConfig(configFile string) (*Config, error) {

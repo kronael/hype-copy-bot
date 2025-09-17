@@ -51,7 +51,6 @@ func TestVolumeWeightedAveragePrice(t *testing.T) {
 	for _, fill := range fills {
 		pt.ProcessFill(fill)
 	}
-	pt.ForceProcessPendingFills() // Ensure all fills are processed
 
 	position := pt.Positions["BTC"]
 	expectedSize := 4.0
@@ -268,7 +267,6 @@ func TestZeroAndNegativeSizes(t *testing.T) {
 	// Test zero size trade (should be ignored)
 	zeroFill := createTestFill("BTC", "B", 0.0, 50000.0, "0.0", time.Now().Unix())
 	pt.ProcessFill(zeroFill)
-	pt.ForceProcessPendingFills() // Ensure pending fills are processed
 
 	position := pt.Positions["BTC"]
 	if position != nil && position.Size != 0 {
@@ -312,7 +310,6 @@ func TestHighFrequencyTrading(t *testing.T) {
 	}
 
 	// Force process pending fills first
-	pt.ForceProcessPendingFills()
 
 	// Should have processed 100 trades (allowing for volume accumulation)
 	if pt.GetTotalTrades() < 95 {

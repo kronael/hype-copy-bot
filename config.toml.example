@@ -16,3 +16,8 @@ copy_threshold = 1000.0
 
 # Paper trading configuration
 paper_trading_only = true  # Currently only paper trading is supported
+
+# Data storage directory (relative to PREFIX env var, defaults to "data/hype-copy-bot")
+# With PREFIX="/srv" (default), data_dir="data/hype-copy-bot" creates files in /srv/data/hype-copy-bot/
+# Use data_dir="trading_data" for /srv/trading_data/
+data_dir = "data/hype-copy-bot"

@@ -119,7 +119,7 @@ func NewTestPaperTrader() *PaperTrader {
 		PendingVolume:    make(map[string]float64),
 		LastVolumeUpdate: make(map[string]time.Time),
 		MinTradeInterval: 1 * time.Millisecond, // Almost immediate for tests
-		VolumeThreshold:  50000.0,              // Higher threshold to reduce spam in stress tests
+		VolumeThreshold:  0.0,                  // No volume threshold - process immediately for tests
 		VolumeDecayRate:  0.5,                  // 50% decay per minute
 	}
 }
@@ -152,9 +152,16 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 	}
 
 	// Check if we should process trades (volume threshold OR time threshold)
-	lastTime, exists := pt.LastTradeTime[fill.Coin]
-	shouldProcessByTime := !exists || time.Since(lastTime) >= pt.MinTradeInterval
 	shouldProcessByVolume := pt.PendingVolume[fill.Coin] >= pt.VolumeThreshold
+
+	// Time threshold: only check if we have pending volume accumulating
+	shouldProcessByTime := false
+	if pt.PendingVolume[fill.Coin] > 0 {
+		volumeStartTime, timeExists := pt.LastVolumeUpdate[fill.Coin]
+		if timeExists && time.Since(volumeStartTime) >= pt.MinTradeInterval {
+			shouldProcessByTime = true
+		}
+	}
 
 	if shouldProcessByVolume || shouldProcessByTime {
 		pt.processAggregatedFills(fill.Coin)
@@ -211,6 +218,9 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 	// Update position
 	pt.updatePosition(position, totalSize, avgPrice, realizedPnL)
 
+	// Update last price for unrealized PnL calculation
+	position.LastPrice = lastPrice
+
 	// Update totals
 	pt.TotalTrades++
 	pt.TotalRealizedPnL += realizedPnL
@@ -229,9 +239,6 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 	}
 	pt.TradeHistory = append(pt.TradeHistory, trade)
 
-	// Update last price for unrealized PnL
-	position.LastPrice = lastPrice
-
 	// Update last trade time
 	pt.LastTradeTime[coin] = time.Now()
 
@@ -239,6 +246,12 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 	pt.PendingFills[coin] = nil
 	pt.PendingVolume[coin] = 0
 	delete(pt.LastVolumeUpdate, coin)
+
+	// Save fill data and account snapshot
+	for _, fill := range fills {
+		pt.SaveFill(fill, action.String(), trade.RealizedPnL, trade.UnrealizedPnL)
+	}
+	pt.SaveAccount()
 
 	// Print trade with proper formatting
 	pt.printTrade(trade, action)
@@ -252,6 +265,13 @@ func (pt *PaperTrader) applyVolumeDecay(coin string) {
 	}
 
 	elapsed := time.Since(lastUpdate)
+
+	// Only apply decay after at least 10 seconds have passed
+	// This prevents micro-second decay from affecting rapid fills
+	if elapsed < 10*time.Second {
+		return
+	}
+
 	minutes := elapsed.Minutes()
 
 	// Apply exponential decay: volume * (1 - decayRate)^minutes
@@ -405,17 +425,15 @@ func (pt *PaperTrader) printTrade(trade *PaperTrade, action PositionAction) {
 		positionStr = fmt.Sprintf("Position: %.2f %s", trade.PositionSize, trade.Coin)
 	}
 
-	// PnL info
-	pnlStr := ""
+	// PnL info - always show both realized and unrealized
+	pnlParts := []string{}
 	if trade.RealizedPnL != 0 {
-		pnlStr += fmt.Sprintf("Realized: $%.2f", trade.RealizedPnL)
+		pnlParts = append(pnlParts, fmt.Sprintf("Realized: $%.2f", trade.RealizedPnL))
 	}
-	if trade.UnrealizedPnL != 0 {
-		if pnlStr != "" {
-			pnlStr += " | "
-		}
-		pnlStr += fmt.Sprintf("Unrealized: $%.2f", trade.UnrealizedPnL)
-	}
+	// Always show unrealized PnL for clarity
+	pnlParts = append(pnlParts, fmt.Sprintf("Unrealized: $%.2f", trade.UnrealizedPnL))
+
+	pnlStr := strings.Join(pnlParts, " | ")
 
 	log.Printf("%s %s %.2f %s @ $%.2f | %s | %s",
 		actionStr,
@@ -492,18 +510,6 @@ func (pt *PaperTrader) GetTotalTrades() int {
 	pt.mu.Lock()
 	defer pt.mu.Unlock()
 	return pt.TotalTrades
-}
-
-// ForceProcessPendingFills processes all pending fills immediately
-func (pt *PaperTrader) ForceProcessPendingFills() {
-	pt.mu.Lock()
-	defer pt.mu.Unlock()
-
-	for coin := range pt.PendingFills {
-		if len(pt.PendingFills[coin]) > 0 {
-			pt.processAggregatedFills(coin)
-		}
-	}
 }
 
 // SetVolumeThreshold sets the volume threshold for triggering trades

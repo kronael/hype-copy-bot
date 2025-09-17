@@ -218,9 +218,7 @@ func TestFloatingPointPrecision(t *testing.T) {
 			sellFill.Hash = "precision_sell_" + tt.name
 
 			pt.ProcessFill(buyFill)
-			pt.ForceProcessPendingFills() // Process buy first
 			pt.ProcessFill(sellFill)
-			pt.ForceProcessPendingFills() // Process sell separately
 
 			position := pt.Positions["PREC"]
 
@@ -364,7 +362,6 @@ func TestRandomizedTradingStress(t *testing.T) {
 	}
 
 	// Force process any pending fills
-	pt.ForceProcessPendingFills()
 
 	// Final verification - check at least 95% of trades were processed (allowing for some filtering)
 	if pt.GetTotalTrades() < numTrades-5 {
