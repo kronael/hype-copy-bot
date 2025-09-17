@@ -218,7 +218,9 @@ func TestFloatingPointPrecision(t *testing.T) {
 			sellFill.Hash = "precision_sell_" + tt.name
 
 			pt.ProcessFill(buyFill)
+			pt.ForceProcessPendingFills() // Process buy first
 			pt.ProcessFill(sellFill)
+			pt.ForceProcessPendingFills() // Process sell separately
 
 			position := pt.Positions["PREC"]
 
