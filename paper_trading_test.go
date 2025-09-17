@@ -226,11 +226,13 @@ func TestSmallTradeFiltering(t *testing.T) {
 	// This test should be in bot_test.go but we'll test the threshold logic
 	config := &Config{
 		CopyThreshold: 1000.0,
+		Bankroll:      1000000.0, // $1M for tests
+		Leverage:      10.0,      // 10x leverage
 	}
 
 	bot := &Bot{
 		config:         config,
-		paperTrader:    NewPaperTrader(),
+		paperTrader:    NewTestPaperTrader(),
 		processedFills: make(map[string]bool),
 	}
 

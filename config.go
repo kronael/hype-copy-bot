@@ -17,6 +17,8 @@ type Config struct {
 	CopyThreshold    float64 `toml:"copy_threshold"`
 	PaperTradingOnly bool    `toml:"paper_trading_only"`
 	DataDir          string  `toml:"data_dir"`
+	Bankroll         float64 `toml:"bankroll"`
+	Leverage         float64 `toml:"leverage"`
 }
 
 // GetDataDir returns the full data directory path with PREFIX env var support
@@ -58,6 +60,12 @@ func loadTOMLConfig(configFile string) (*Config, error) {
 	}
 	if !config.PaperTradingOnly {
 		config.PaperTradingOnly = true
+	}
+	if config.Bankroll == 0 {
+		config.Bankroll = 10000.0 // Default $10k bankroll
+	}
+	if config.Leverage == 0 {
+		config.Leverage = 1.0 // Default 1x leverage (no leverage)
 	}
 
 	// Validate required fields

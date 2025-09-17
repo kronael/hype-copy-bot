@@ -20,6 +20,8 @@ func TestComprehensivePnLAccounting(t *testing.T) {
 		MinTradeInterval: 1 * time.Millisecond,
 		VolumeThreshold:  1.0,
 		VolumeDecayRate:  0.5,
+		Bankroll:         10000000.0, // $10M for comprehensive test
+		Leverage:         1.0,        // 1x leverage
 	}
 
 	fmt.Println("\n=== COMPREHENSIVE PNL ACCOUNTING TEST ===")
@@ -179,6 +181,8 @@ func TestFloatingPointEdgeCases(t *testing.T) {
 		MinTradeInterval: 1 * time.Millisecond,
 		VolumeThreshold:  1.0,
 		VolumeDecayRate:  0.5,
+		Bankroll:         10000000.0, // $10M for comprehensive test
+		Leverage:         1.0,        // 1x leverage
 	}
 
 	fmt.Println("\n=== FLOATING POINT EDGE CASES ===")

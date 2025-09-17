@@ -19,6 +19,8 @@ func TestCashflowAndBankrollManagement(t *testing.T) {
 		MinTradeInterval: 1 * time.Millisecond,
 		VolumeThreshold:  1.0,
 		VolumeDecayRate:  0.5,
+		Bankroll:         200000.0, // $200k for cashflow test
+		Leverage:         1.0,      // 1x leverage
 	}
 
 	fmt.Println("\n=== CASHFLOW & BANKROLL MANAGEMENT TEST ===")
@@ -139,6 +141,8 @@ func TestRealisticMarketPriceScenario(t *testing.T) {
 		MinTradeInterval: 1 * time.Millisecond,
 		VolumeThreshold:  1.0,
 		VolumeDecayRate:  0.5,
+		Bankroll:         200000.0, // $200k for cashflow test
+		Leverage:         1.0,      // 1x leverage
 	}
 
 	fmt.Println("\n=== REALISTIC MARKET PRICE SCENARIO ===")

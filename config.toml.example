@@ -21,3 +21,11 @@ paper_trading_only = true  # Currently only paper trading is supported
 # With PREFIX="/srv" (default), data_dir="data/hype-copy-bot" creates files in /srv/data/hype-copy-bot/
 # Use data_dir="trading_data" for /srv/trading_data/
 data_dir = "data/hype-copy-bot"
+
+# Bankroll management
+# Your starting capital for paper trading (in USD)
+bankroll = 10000.0
+
+# Maximum leverage multiplier (1.0 = no leverage, 2.0 = 2x leverage)
+# Position size cannot exceed bankroll * leverage
+leverage = 3.0

@@ -24,6 +24,8 @@ type PaperTrader struct {
 	PendingVolume    map[string]float64   // Accumulated volume per coin
 	LastVolumeUpdate map[string]time.Time // When volume started accumulating per coin
 	VolumeDecayRate  float64              // Rate of volume decay per minute (e.g., 0.5 = 50%)
+	Bankroll         float64              // Starting capital
+	Leverage         float64              // Maximum leverage multiplier
 }
 
 type Position struct {
@@ -93,7 +95,7 @@ func (pa PositionAction) Emoji() string {
 	}
 }
 
-func NewPaperTrader() *PaperTrader {
+func NewPaperTrader(bankroll, leverage float64) *PaperTrader {
 	return &PaperTrader{
 		Positions:        make(map[string]*Position),
 		StartTime:        time.Now(),
@@ -105,6 +107,8 @@ func NewPaperTrader() *PaperTrader {
 		MinTradeInterval: 60 * time.Second, // 1 minute minimum between trades
 		VolumeThreshold:  1000.0,           // $1000 volume threshold to trigger trade
 		VolumeDecayRate:  0.5,              // 50% decay per minute
+		Bankroll:         bankroll,
+		Leverage:         leverage,
 	}
 }
 
@@ -121,7 +125,34 @@ func NewTestPaperTrader() *PaperTrader {
 		MinTradeInterval: 1 * time.Millisecond, // Almost immediate for tests
 		VolumeThreshold:  0.0,                  // No volume threshold - process immediately for tests
 		VolumeDecayRate:  0.5,                  // 50% decay per minute
+		Bankroll:         100000.0,             // $100k for tests
+		Leverage:         1.0,                  // No leverage for tests
 	}
+}
+
+// validatePositionSize checks if a new position would exceed bankroll limits
+func (pt *PaperTrader) validatePositionSize(
+	coin string,
+	newSize float64,
+	price float64,
+) bool {
+	// Calculate total position value across all coins
+	totalPositionValue := 0.0
+
+	// Sum existing positions
+	for coinName, pos := range pt.Positions {
+		if coinName != coin {
+			totalPositionValue += math.Abs(pos.Size * pos.LastPrice)
+		}
+	}
+
+	// Add the new position value
+	totalPositionValue += math.Abs(newSize * price)
+
+	// Check against bankroll * leverage limit
+	maxPositionValue := pt.Bankroll * pt.Leverage
+
+	return totalPositionValue <= maxPositionValue
 }
 
 func (pt *PaperTrader) ProcessFill(fill *Fill) {
@@ -211,6 +242,15 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 
 	// Determine action type
 	action := pt.determineAction(oldSize, newSize)
+
+	// Validate position size limits
+	if !pt.validatePositionSize(coin, newSize, lastPrice) {
+		log.Printf("Skipping trade for %s: would exceed bankroll limit (%.2f * %.2fx = %.2f max)",
+			coin, pt.Bankroll, pt.Leverage, pt.Bankroll*pt.Leverage)
+		pt.PendingFills[coin] = nil // Clear pending fills
+		pt.PendingVolume[coin] = 0
+		return
+	}
 
 	// Calculate realized PnL for position changes
 	realizedPnL := pt.calculateRealizedPnL(position, totalSize, avgPrice, totalClosedPnL, action)

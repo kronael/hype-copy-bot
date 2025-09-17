@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+// createTestConfig creates a config with proper bankroll for testing
+func createTestConfig() *Config {
+	return &Config{
+		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
+		APIKey:        "test_key",
+		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		CopyThreshold: 1000.0,
+		Bankroll:      1000000.0, // $1M for tests to avoid limit issues
+		Leverage:      10.0,      // 10x leverage
+	}
+}
+
 func TestBotConfigValidation(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -48,12 +60,8 @@ func TestBotConfigValidation(t *testing.T) {
 }
 
 func TestFillProcessingThreshold(t *testing.T) {
-	config := &Config{
-		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
-		APIKey:        "test_key",
-		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		CopyThreshold: 1000.0, // $1000 threshold
-	}
+	config := createTestConfig()
+	config.CopyThreshold = 1000.0 // $1000 threshold
 
 	bot, err := NewBot(config)
 	if err != nil {
@@ -172,12 +180,8 @@ func TestClientAPI(t *testing.T) {
 	defer server.Close()
 
 	// Create client with mock server URL
-	config := &Config{
-		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
-		APIKey:        "test_key",
-		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		CopyThreshold: 100.0,
-	}
+	config := createTestConfig()
+	config.CopyThreshold = 100.0
 
 	client, err := NewClient(config)
 	if err != nil {
@@ -208,12 +212,8 @@ func TestClientAPI(t *testing.T) {
 }
 
 func TestBotDuplicateFillHandling(t *testing.T) {
-	config := &Config{
-		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
-		APIKey:        "test_key",
-		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		CopyThreshold: 100.0,
-	}
+	config := createTestConfig()
+	config.CopyThreshold = 100.0
 
 	bot, err := NewBot(config)
 	if err != nil {
@@ -270,12 +270,8 @@ func TestConfigEnvironmentDefaults(t *testing.T) {
 }
 
 func TestBotStartStop(t *testing.T) {
-	config := &Config{
-		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
-		APIKey:        "test_key",
-		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		CopyThreshold: 100.0,
-	}
+	config := createTestConfig()
+	config.CopyThreshold = 100.0
 
 	bot, err := NewBot(config)
 	if err != nil {
@@ -310,12 +306,9 @@ func TestBotStartStop(t *testing.T) {
 
 func TestRealWorldTradingScenario(t *testing.T) {
 	// Simulate The White Whale's actual trading pattern
-	config := &Config{
-		TargetAccount: "0xb8b9e3097c8b1dddf9c5ea9d48a7ebeaf09d67d2",
-		APIKey:        "test_key",
-		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		CopyThreshold: 1000.0,
-	}
+	config := createTestConfig()
+	config.TargetAccount = "0xb8b9e3097c8b1dddf9c5ea9d48a7ebeaf09d67d2"
+	config.CopyThreshold = 1000.0
 
 	bot, err := NewBot(config)
 	if err != nil {
@@ -402,12 +395,8 @@ func TestRealWorldTradingScenario(t *testing.T) {
 }
 
 func TestErrorHandling(t *testing.T) {
-	config := &Config{
-		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
-		APIKey:        "test_key",
-		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		CopyThreshold: 100.0,
-	}
+	config := createTestConfig()
+	config.CopyThreshold = 100.0
 
 	bot, err := NewBot(config)
 	if err != nil {
@@ -453,12 +442,8 @@ func TestErrorHandling(t *testing.T) {
 
 // Benchmark for bot performance under load
 func BenchmarkBotProcessFill(b *testing.B) {
-	config := &Config{
-		TargetAccount: "0x1234567890abcdef1234567890abcdef12345678",
-		APIKey:        "test_key",
-		PrivateKey:    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-		CopyThreshold: 100.0,
-	}
+	config := createTestConfig()
+	config.CopyThreshold = 100.0
 
 	bot, err := NewBot(config)
 	if err != nil {

@@ -21,6 +21,7 @@ real-time position management.
 - Position updates follow state machine: OPEN -> ADD/REDUCE -> CLOSE/REVERSE
 - PnL calculations happen on position changes, not fills
 - Volume-weighted average pricing requires cost basis tracking
+- Bankroll management prevents positions exceeding capital * leverage limits
 
 **Only record surprising things, not common sense**
 
@@ -117,6 +118,7 @@ Position Update -> PnL Calculation -> Trade Record
 - `loadConfig()`: TOML-first configuration loading with env var fallback
 - `ProcessFill()`: Core position management with action determination
 - `determineAction()`: State machine for position lifecycle (OPEN/ADD/REDUCE/CLOSE/REVERSE)
+- `validatePositionSize()`: Bankroll limit validation before position updates
 - `calculateRealizedPnL()`: FIFO-based PnL calculation on position reductions
 - `updatePosition()`: Volume-weighted average price and cost basis management
 - `checkTrades()`: Resilient API polling with exponential backoff
@@ -126,10 +128,11 @@ Position Update -> PnL Calculation -> Trade Record
 1. **Hash-based Duplicate Detection**: Prevents reprocessing same fills across restarts
 2. **Volume-Weighted Average Pricing**: Accurate entry prices for complex position building
 3. **Position Action Classification**: Clear state machine for all trading scenarios
-4. **TOML Configuration**: Structured config with backwards compatibility
-5. **Comprehensive Testing**: Unit tests, integration tests, stress tests, benchmarks
-6. **Paper Trading Only**: Safe by design, real trading as future enhancement
-7. **Error Resilience**: Continue operation despite individual failures
+4. **Bankroll Management**: Position size validation against capital and leverage limits
+5. **TOML Configuration**: Structured config with backwards compatibility
+6. **Comprehensive Testing**: Unit tests, integration tests, stress tests, benchmarks
+7. **Paper Trading Only**: Safe by design, real trading as future enhancement
+8. **Error Resilience**: Continue operation despite individual failures
 
 ## Important Notes
 
