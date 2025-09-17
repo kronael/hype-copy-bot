@@ -32,8 +32,6 @@ This is a Hyperliquid trade following bot (hype-copy-bot) that monitors successf
 - Just do it, don't ask
 - Short CLI flags and file extensions (.json not .jsonl)
 - No fancy outputs - no progress bars, spinners, or animations unless essential
-- Put source code under src directory for organization
-- Use src not ./src or src/ in commands when possible
 
 **Error handling philosophy**
 
@@ -73,14 +71,6 @@ make prepare
 
 # Build for development
 make build
-
-# Run comprehensive tests (23+ unit tests, stress tests, benchmarks)
-make test
-
-# Run specific test suites
-go test -v -run TestPosition src/...    # Position management tests
-go test -v -run TestStress src/...      # Stress tests
-go test -v -run TestBot src/...         # Bot integration tests
 
 # Run benchmarks
 go test -bench=. src/...

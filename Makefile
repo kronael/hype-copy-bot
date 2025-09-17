@@ -17,11 +17,11 @@ prepare:
 
 # Build the binary
 build: prepare
-	go build -o $(BINARY_NAME) ./src
+	go build -o $(BINARY_NAME) .
 
 # Run all tests
 test:
-	go test -timeout=30s ./src/...
+	go test -timeout=30s .
 
 # Clean build artifacts
 clean:

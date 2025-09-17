@@ -20,8 +20,10 @@ type PaperTrader struct {
 	LastTradeTime    map[string]time.Time
 	PendingFills     map[string][]*Fill
 	MinTradeInterval time.Duration
-	VolumeThreshold  float64 // Dollar volume threshold to trigger trade
-	PendingVolume    map[string]float64
+	VolumeThreshold  float64              // Dollar volume threshold to trigger trade
+	PendingVolume    map[string]float64   // Accumulated volume per coin
+	LastVolumeUpdate map[string]time.Time // When volume started accumulating per coin
+	VolumeDecayRate  float64              // Rate of volume decay per minute (e.g., 0.5 = 50%)
 }
 
 type Position struct {
@@ -99,8 +101,10 @@ func NewPaperTrader() *PaperTrader {
 		LastTradeTime:    make(map[string]time.Time),
 		PendingFills:     make(map[string][]*Fill),
 		PendingVolume:    make(map[string]float64),
+		LastVolumeUpdate: make(map[string]time.Time),
 		MinTradeInterval: 60 * time.Second, // 1 minute minimum between trades
 		VolumeThreshold:  1000.0,           // $1000 volume threshold to trigger trade
+		VolumeDecayRate:  0.5,              // 50% decay per minute
 	}
 }
 
@@ -113,8 +117,10 @@ func NewTestPaperTrader() *PaperTrader {
 		LastTradeTime:    make(map[string]time.Time),
 		PendingFills:     make(map[string][]*Fill),
 		PendingVolume:    make(map[string]float64),
+		LastVolumeUpdate: make(map[string]time.Time),
 		MinTradeInterval: 1 * time.Millisecond, // Almost immediate for tests
 		VolumeThreshold:  50000.0,              // Higher threshold to reduce spam in stress tests
+		VolumeDecayRate:  0.5,                  // 50% decay per minute
 	}
 }
 
@@ -133,9 +139,17 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 	}
 	pt.PendingFills[fill.Coin] = append(pt.PendingFills[fill.Coin], fill)
 
+	// Apply volume decay before adding new volume
+	pt.applyVolumeDecay(fill.Coin)
+
 	// Add to pending volume
 	fillVolume := fill.Size * fill.Price
 	pt.PendingVolume[fill.Coin] += fillVolume
+
+	// Track when volume accumulation started for this coin
+	if _, exists := pt.LastVolumeUpdate[fill.Coin]; !exists {
+		pt.LastVolumeUpdate[fill.Coin] = time.Now()
+	}
 
 	// Check if we should process trades (volume threshold OR time threshold)
 	lastTime, exists := pt.LastTradeTime[fill.Coin]
@@ -224,9 +238,32 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 	// Clear pending fills and volume
 	pt.PendingFills[coin] = nil
 	pt.PendingVolume[coin] = 0
+	delete(pt.LastVolumeUpdate, coin)
 
 	// Print trade with proper formatting
 	pt.printTrade(trade, action)
+}
+
+// applyVolumeDecay reduces pending volume based on time since volume accumulation started
+func (pt *PaperTrader) applyVolumeDecay(coin string) {
+	lastUpdate, exists := pt.LastVolumeUpdate[coin]
+	if !exists || pt.PendingVolume[coin] == 0 {
+		return
+	}
+
+	elapsed := time.Since(lastUpdate)
+	minutes := elapsed.Minutes()
+
+	// Apply exponential decay: volume * (1 - decayRate)^minutes
+	decayFactor := math.Pow(1.0-pt.VolumeDecayRate, minutes)
+	pt.PendingVolume[coin] *= decayFactor
+
+	// If volume becomes very small, clear it completely
+	if pt.PendingVolume[coin] < 1.0 {
+		pt.PendingVolume[coin] = 0
+		pt.PendingFills[coin] = nil
+		delete(pt.LastVolumeUpdate, coin)
+	}
 }
 
 func (pt *PaperTrader) getPosition(coin string) *Position {

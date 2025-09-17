@@ -353,8 +353,8 @@ func TestRealWorldTradingScenario(t *testing.T) {
 		t.Errorf("Total trades = %d, want %d", pt.GetTotalTrades(), len(fills))
 	}
 
-	// Should have significant realized PnL (from the ClosedPnl values)
-	expectedMinPnL := 30000.0 // Conservative estimate
+	// Should have some realized PnL (only from actual position reductions)
+	expectedMinPnL := 3000.0 // From ETH profit taking only (ADD actions don't realize PnL)
 	if pt.TotalRealizedPnL < expectedMinPnL {
 		t.Errorf("Total realized PnL = %f, want at least %f", pt.TotalRealizedPnL, expectedMinPnL)
 	}
