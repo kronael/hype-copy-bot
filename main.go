@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	// Configure Unix-style logging (no timestamp, simple format)
-	log.SetFlags(0)
+	// Configure Unix-style logging with standard timestamp format
+	log.SetFlags(log.LstdFlags)
 	log.SetPrefix("")
 
 	log.Println("hype-copy-bot: starting")
