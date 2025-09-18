@@ -233,7 +233,7 @@ func TestSmallTradeFiltering(t *testing.T) {
 	bot := &Bot{
 		config:         config,
 		paperTrader:    NewTestPaperTrader(),
-		processedFills: make(map[string]bool),
+		processedFills: make(map[string]int64),
 	}
 
 	// Small trade - should be filtered out

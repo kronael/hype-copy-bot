@@ -14,7 +14,7 @@ type Bot struct {
 	stopChan       chan struct{}
 	wg             sync.WaitGroup
 	lastFillHash   string
-	processedFills map[string]bool
+	processedFills map[string]int64 // hash -> timestamp for LRU cleanup
 	paperTrader    *PaperTrader
 }
 
@@ -28,7 +28,7 @@ func NewBot(config *Config) (*Bot, error) {
 		config:         config,
 		client:         client,
 		stopChan:       make(chan struct{}),
-		processedFills: make(map[string]bool),
+		processedFills: make(map[string]int64),
 		paperTrader:    NewPaperTrader(config.Bankroll, config.Leverage, config.BaseNotional),
 	}, nil
 }
@@ -81,10 +81,17 @@ func (b *Bot) monitorTrades() {
 }
 
 func (b *Bot) checkForNewTrades() error {
-	fills, err := b.client.GetUserFills(b.config.TargetAccount)
+	// Get fills from last 1 hour only to avoid processing old data
+	endTime := time.Now().UnixMilli()
+	startTime := endTime - (60 * 60 * 1000) // 1 hour ago in milliseconds
+
+	fills, err := b.client.GetUserFillsByTime(b.config.TargetAccount, startTime, endTime)
 	if err != nil {
 		return err
 	}
+
+	// Clean up old processed fills (older than 2 hours)
+	b.cleanupProcessedFills(endTime - (2 * 60 * 60 * 1000))
 
 	newFillsCount := 0
 	maxFillsPerCheck := 50 // Safety limit to prevent overloading
@@ -97,7 +104,7 @@ func (b *Bot) checkForNewTrades() error {
 		}
 
 		// Skip if already processed (checked in process)
-		if b.processedFills[fill.Hash] {
+		if _, exists := b.processedFills[fill.Hash]; exists {
 			continue
 		}
 
@@ -108,7 +115,7 @@ func (b *Bot) checkForNewTrades() error {
 			log.Printf("Error processing fill: %v", err)
 		} else {
 			// Only increment if actually processed (not skipped due to threshold)
-			if b.processedFills[fill.Hash] {
+			if _, exists := b.processedFills[fill.Hash]; exists {
 				newFillsCount++
 			}
 		}
@@ -129,7 +136,7 @@ func (b *Bot) checkForNewTrades() error {
 
 func (b *Bot) process(fill *Fill) error {
 	// Skip if we've already processed this fill
-	if b.processedFills[fill.Hash] {
+	if _, exists := b.processedFills[fill.Hash]; exists {
 		return nil
 	}
 
@@ -139,13 +146,22 @@ func (b *Bot) process(fill *Fill) error {
 		return nil
 	}
 
-	// Mark as processed
-	b.processedFills[fill.Hash] = true
+	// Mark as processed with timestamp
+	b.processedFills[fill.Hash] = fill.Time
 
 	// Process this trade in paper trader
 	b.paperTrader.ProcessFill(fill)
 
 	return nil
+}
+
+// cleanupProcessedFills removes entries older than cutoffTime to prevent memory growth
+func (b *Bot) cleanupProcessedFills(cutoffTime int64) {
+	for hash, timestamp := range b.processedFills {
+		if timestamp < cutoffTime {
+			delete(b.processedFills, hash)
+		}
+	}
 }
 
 func (b *Bot) checkTrades() error {

@@ -81,6 +81,29 @@ func (c *Client) GetUserFills(user string) ([]*Fill, error) {
 	return fills, nil
 }
 
+// GetUserFillsByTime retrieves user fills within a specific time range
+// startTime and endTime are Unix timestamps in milliseconds
+func (c *Client) GetUserFillsByTime(user string, startTime, endTime int64) ([]*Fill, error) {
+	payload := map[string]interface{}{
+		"type":      "userFillsByTime",
+		"user":      user,
+		"startTime": startTime,
+		"endTime":   endTime,
+	}
+
+	resp, err := c.makeInfoRequest(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user fills by time for %s: %v", user, err)
+	}
+
+	var fills []*Fill
+	if err := json.Unmarshal(resp, &fills); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal fills response: %v", err)
+	}
+
+	return fills, nil
+}
+
 func (c *Client) PlaceOrder(order *Order) error {
 	payload := map[string]interface{}{
 		"type": "order",

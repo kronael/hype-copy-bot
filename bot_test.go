@@ -246,7 +246,7 @@ func TestBotDuplicateFillHandling(t *testing.T) {
 	}
 
 	// Check hash is tracked
-	if !bot.processedFills[fill.Hash] {
+	if _, exists := bot.processedFills[fill.Hash]; !exists {
 		t.Errorf("Fill hash not tracked in processedFills")
 	}
 }
