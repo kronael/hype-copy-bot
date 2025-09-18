@@ -19,6 +19,7 @@ type Config struct {
 	DataDir          string  `toml:"data_dir"`
 	Bankroll         float64 `toml:"bankroll"`
 	Leverage         float64 `toml:"leverage"`
+	BaseNotional     float64 `toml:"base_notional"`
 }
 
 // GetDataDir returns the full data directory path with PREFIX env var support
@@ -66,6 +67,9 @@ func loadTOMLConfig(configFile string) (*Config, error) {
 	}
 	if config.Leverage == 0 {
 		config.Leverage = 1.0 // Default 1x leverage (no leverage)
+	}
+	if config.BaseNotional == 0 {
+		config.BaseNotional = 1000.0 // Default $1000 per trade
 	}
 
 	// Validate required fields

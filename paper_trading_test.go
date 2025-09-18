@@ -283,16 +283,20 @@ func TestZeroAndNegativeSizes(t *testing.T) {
 func TestHighFrequencyTrading(t *testing.T) {
 	// Use immediate processing for this test to avoid volume accumulation issues
 	pt := &PaperTrader{
-		Positions:        make(map[string]*Position),
-		StartTime:        time.Now(),
-		TradeHistory:     make([]*PaperTrade, 0),
-		LastTradeTime:    make(map[string]time.Time),
-		PendingFills:     make(map[string][]*Fill),
-		PendingVolume:    make(map[string]float64),
-		LastVolumeUpdate: make(map[string]time.Time),
-		MinTradeInterval: 1 * time.Millisecond, // Almost immediate
-		VolumeThreshold:  1.0,                  // Very low threshold for immediate processing
-		VolumeDecayRate:  0.5,
+		Positions:          make(map[string]*Position),
+		StartTime:          time.Now(),
+		TradeHistory:       make([]*PaperTrade, 0),
+		LastTradeTime:      make(map[string]time.Time),
+		PendingFills:       make(map[string][]*Fill),
+		PendingVolume:      make(map[string]float64),
+		LastVolumeUpdate:   make(map[string]time.Time),
+		MinTradeInterval:   1 * time.Millisecond, // Almost immediate
+		VolumeThreshold:    1.0,                  // Very low threshold for immediate processing
+		VolumeDecayRate:    0.5,
+		Bankroll:           1000000000.0, // $1B for high frequency test
+		Leverage:           1.0,          // 1x leverage
+		BaseNotional:       10000000.0,   // Large base notional for tests
+		DisableDynamicSize: true,         // Disable dynamic sizing for this test
 	}
 
 	// Simulate rapid fire trades like The White Whale

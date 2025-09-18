@@ -29,7 +29,7 @@ func NewBot(config *Config) (*Bot, error) {
 		client:         client,
 		stopChan:       make(chan struct{}),
 		processedFills: make(map[string]bool),
-		paperTrader:    NewPaperTrader(config.Bankroll, config.Leverage),
+		paperTrader:    NewPaperTrader(config.Bankroll, config.Leverage, config.BaseNotional),
 	}, nil
 }
 

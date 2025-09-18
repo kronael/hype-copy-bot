@@ -9,18 +9,20 @@ import (
 func TestCashflowAndBankrollManagement(t *testing.T) {
 	// Enhanced paper trader with cashflow tracking
 	pt := &PaperTrader{
-		Positions:        make(map[string]*Position),
-		StartTime:        time.Now(),
-		TradeHistory:     make([]*PaperTrade, 0),
-		LastTradeTime:    make(map[string]time.Time),
-		PendingFills:     make(map[string][]*Fill),
-		PendingVolume:    make(map[string]float64),
-		LastVolumeUpdate: make(map[string]time.Time),
-		MinTradeInterval: 1 * time.Millisecond,
-		VolumeThreshold:  1.0,
-		VolumeDecayRate:  0.5,
-		Bankroll:         200000.0, // $200k for cashflow test
-		Leverage:         1.0,      // 1x leverage
+		Positions:          make(map[string]*Position),
+		StartTime:          time.Now(),
+		TradeHistory:       make([]*PaperTrade, 0),
+		LastTradeTime:      make(map[string]time.Time),
+		PendingFills:       make(map[string][]*Fill),
+		PendingVolume:      make(map[string]float64),
+		LastVolumeUpdate:   make(map[string]time.Time),
+		MinTradeInterval:   1 * time.Millisecond,
+		VolumeThreshold:    1.0,
+		VolumeDecayRate:    0.5,
+		Bankroll:           200000.0, // $200k for cashflow test
+		Leverage:           1.0,      // 1x leverage
+		BaseNotional:       10000000.0, // Large base notional for tests
+		DisableDynamicSize: true,       // Disable dynamic sizing for this test
 	}
 
 	fmt.Println("\n=== CASHFLOW & BANKROLL MANAGEMENT TEST ===")

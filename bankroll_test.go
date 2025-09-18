@@ -20,6 +20,7 @@ func TestBankrollLimits(t *testing.T) {
 		VolumeDecayRate:  0.5,
 		Bankroll:         1000.0, // $1k bankroll
 		Leverage:         2.0,    // 2x leverage = $2k max
+		BaseNotional:     1000.0, // $1k base trade size
 	}
 
 	// Test 1: Position within limits should be accepted
@@ -31,29 +32,39 @@ func TestBankrollLimits(t *testing.T) {
 		if pos == nil {
 			t.Fatal("Expected position to be created")
 		}
-		if pos.Size != 0.02 {
-			t.Errorf("Expected size 0.02, got %f", pos.Size)
+		// With dynamic sizing, we expect $1000 / $50000 = 0.02 BTC
+		expectedSize := 0.02
+		if pos.Size != expectedSize {
+			t.Errorf("Expected dynamic size %.6f, got %.6f", expectedSize, pos.Size)
 		}
 	})
 
-	// Test 2: Position exceeding limits should be rejected
-	t.Run("ExceedingLimits", func(t *testing.T) {
-		// Try to add a massive position that would exceed $2k limit
+	// Test 2: Dynamic sizing should scale down large trades to fit available capital
+	t.Run("DynamicSizingForLargeTradeWithConstrainedCapital", func(t *testing.T) {
+		// After first trade, we have $1000 used, $1000 remaining capacity
+		// Try to add a position - should be dynamically sized to fit remaining capacity
 		bigFill := createTestFill("ETH", "B", 1.0, 5000.0, "0.0", time.Now().Unix())
-		// This would be $5k position, exceeding $2k limit
 
 		initialTradeCount := pt.TotalTrades
 		pt.ProcessFill(bigFill)
 
-		// Position should not exist
+		// Position should exist but be sized to fit available capital
 		pos := pt.Positions["ETH"]
-		if pos != nil && pos.Size != 0 {
-			t.Errorf("Expected position to be rejected, but got size %f", pos.Size)
+		if pos == nil || pos.Size == 0 {
+			t.Errorf("Expected position to be created with dynamic sizing, got %v", pos)
 		}
 
-		// No new trade should have been recorded
-		if pt.TotalTrades != initialTradeCount {
-			t.Errorf("Expected no new trades, but got %d", pt.TotalTrades)
+		// Should have created a new trade
+		if pt.TotalTrades <= initialTradeCount {
+			t.Errorf("Expected new trade to be created, trades: %d", pt.TotalTrades)
+		}
+
+		// Position value should be around $500-1000 (based on remaining capacity)
+		if pos != nil {
+			posValue := pos.Size * pos.LastPrice
+			if posValue > 1200 { // Should not exceed reasonable limit
+				t.Errorf("Position value too large: $%.2f", posValue)
+			}
 		}
 	})
 
@@ -63,23 +74,34 @@ func TestBankrollLimits(t *testing.T) {
 		pt.Positions = make(map[string]*Position)
 		pt.TotalTrades = 0
 
-		// Add first position: $500 value
-		fill1 := createTestFill("BTC", "B", 0.01, 50000.0, "0.0", time.Now().Unix())
+		// Add first position: should be $1000 value (0.02 BTC)
+		fill1 := createTestFill("BTC", "B", 999.0, 50000.0, "0.0", time.Now().Unix())
 		pt.ProcessFill(fill1)
 
-		// Add second position: $500 value (total = $1000 within $2k limit)
-		fill2 := createTestFill("ETH", "B", 0.1, 5000.0, "0.0", time.Now().Unix())
+		// Add second position: should be $1000 value (0.2 ETH)
+		fill2 := createTestFill("ETH", "B", 999.0, 5000.0, "0.0", time.Now().Unix())
 		pt.ProcessFill(fill2)
 
-		// Both positions should exist
+		// Both positions should exist with dynamic sizing
 		btcPos := pt.Positions["BTC"]
 		ethPos := pt.Positions["ETH"]
 
-		if btcPos == nil || btcPos.Size != 0.01 {
-			t.Errorf("BTC position should exist with size 0.01, got %v", btcPos)
+		if btcPos == nil || btcPos.Size == 0 {
+			t.Errorf("BTC position should exist with size > 0, got %v", btcPos)
 		}
-		if ethPos == nil || ethPos.Size != 0.1 {
-			t.Errorf("ETH position should exist with size 0.1, got %v", ethPos)
+		if ethPos == nil || ethPos.Size == 0 {
+			t.Errorf("ETH position should exist with size > 0, got %v", ethPos)
+		}
+
+		// Verify positions are reasonably sized (around $1000 each)
+		btcValue := btcPos.Size * btcPos.LastPrice
+		ethValue := ethPos.Size * ethPos.LastPrice
+
+		if btcValue < 900 || btcValue > 1100 {
+			t.Errorf("BTC position value should be around $1000, got $%.2f", btcValue)
+		}
+		if ethValue < 900 || ethValue > 1100 {
+			t.Errorf("ETH position value should be around $1000, got $%.2f", ethValue)
 		}
 	})
 

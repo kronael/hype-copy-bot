@@ -17,6 +17,7 @@ func createTestConfig() *Config {
 		CopyThreshold: 1000.0,
 		Bankroll:      1000000.0, // $1M for tests to avoid limit issues
 		Leverage:      10.0,      // 10x leverage
+		BaseNotional:  1000.0,    // $1k base trade size
 	}
 }
 

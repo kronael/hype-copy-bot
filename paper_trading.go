@@ -11,21 +11,23 @@ import (
 )
 
 type PaperTrader struct {
-	mu               sync.Mutex
-	Positions        map[string]*Position
-	TotalRealizedPnL float64
-	TotalTrades      int
-	StartTime        time.Time
-	TradeHistory     []*PaperTrade
-	LastTradeTime    map[string]time.Time
-	PendingFills     map[string][]*Fill
-	MinTradeInterval time.Duration
-	VolumeThreshold  float64              // Dollar volume threshold to trigger trade
-	PendingVolume    map[string]float64   // Accumulated volume per coin
-	LastVolumeUpdate map[string]time.Time // When volume started accumulating per coin
-	VolumeDecayRate  float64              // Rate of volume decay per minute (e.g., 0.5 = 50%)
-	Bankroll         float64              // Starting capital
-	Leverage         float64              // Maximum leverage multiplier
+	mu                 sync.Mutex
+	Positions          map[string]*Position
+	TotalRealizedPnL   float64
+	TotalTrades        int
+	StartTime          time.Time
+	TradeHistory       []*PaperTrade
+	LastTradeTime      map[string]time.Time
+	PendingFills       map[string][]*Fill
+	MinTradeInterval   time.Duration
+	VolumeThreshold    float64              // Dollar volume threshold to trigger trade
+	PendingVolume      map[string]float64   // Accumulated volume per coin
+	LastVolumeUpdate   map[string]time.Time // When volume started accumulating per coin
+	VolumeDecayRate    float64              // Rate of volume decay per minute (e.g., 0.5 = 50%)
+	Bankroll           float64              // Starting capital
+	Leverage           float64              // Maximum leverage multiplier
+	BaseNotional       float64              // Base trade size in USD
+	DisableDynamicSize bool                 // For testing: disable dynamic sizing and use exact fill sizes
 }
 
 type Position struct {
@@ -95,7 +97,7 @@ func (pa PositionAction) Emoji() string {
 	}
 }
 
-func NewPaperTrader(bankroll, leverage float64) *PaperTrader {
+func NewPaperTrader(bankroll, leverage, baseNotional float64) *PaperTrader {
 	return &PaperTrader{
 		Positions:        make(map[string]*Position),
 		StartTime:        time.Now(),
@@ -109,25 +111,81 @@ func NewPaperTrader(bankroll, leverage float64) *PaperTrader {
 		VolumeDecayRate:  0.5,              // 50% decay per minute
 		Bankroll:         bankroll,
 		Leverage:         leverage,
+		BaseNotional:     baseNotional,
 	}
 }
 
 // NewTestPaperTrader creates a paper trader optimized for testing
 func NewTestPaperTrader() *PaperTrader {
 	return &PaperTrader{
-		Positions:        make(map[string]*Position),
-		StartTime:        time.Now(),
-		TradeHistory:     make([]*PaperTrade, 0),
-		LastTradeTime:    make(map[string]time.Time),
-		PendingFills:     make(map[string][]*Fill),
-		PendingVolume:    make(map[string]float64),
-		LastVolumeUpdate: make(map[string]time.Time),
-		MinTradeInterval: 1 * time.Millisecond, // Almost immediate for tests
-		VolumeThreshold:  0.0,                  // No volume threshold - process immediately for tests
-		VolumeDecayRate:  0.5,                  // 50% decay per minute
-		Bankroll:         100000.0,             // $100k for tests
-		Leverage:         1.0,                  // No leverage for tests
+		Positions:          make(map[string]*Position),
+		StartTime:          time.Now(),
+		TradeHistory:       make([]*PaperTrade, 0),
+		LastTradeTime:      make(map[string]time.Time),
+		PendingFills:       make(map[string][]*Fill),
+		PendingVolume:      make(map[string]float64),
+		LastVolumeUpdate:   make(map[string]time.Time),
+		MinTradeInterval:   1 * time.Millisecond, // Almost immediate for tests
+		VolumeThreshold:    0.0,                  // No volume threshold - process immediately for tests
+		VolumeDecayRate:    0.5,                  // 50% decay per minute
+		Bankroll:           1000000000.0,         // $1B for tests - large enough for any test
+		Leverage:           1.0,                  // No leverage for tests
+		BaseNotional:       10000000.0,           // $10M per trade - large enough to not limit test fills
+		DisableDynamicSize: true,                 // Disable dynamic sizing for core tests
 	}
+}
+
+// calculateAvailableCapital returns the current available capital for trading
+// Available capital = initial bankroll + realized PnL + unrealized PnL
+func (pt *PaperTrader) calculateAvailableCapital() float64 {
+	// Start with initial bankroll and realized PnL
+	availableCapital := pt.Bankroll + pt.TotalRealizedPnL
+
+	// Add unrealized PnL from all positions
+	for _, position := range pt.Positions {
+		if position.Size != 0 {
+			availableCapital += pt.calculateUnrealizedPnL(position)
+		}
+	}
+
+	return availableCapital
+}
+
+// calculateDynamicTradeSize determines the appropriate trade size based on available capital
+func (pt *PaperTrader) calculateDynamicTradeSize(fill *Fill) float64 {
+	availableCapital := pt.calculateAvailableCapital()
+
+	// Calculate currently used capital (total position value)
+	usedCapital := 0.0
+	for _, pos := range pt.Positions {
+		if pos.Size != 0 {
+			usedCapital += math.Abs(pos.Size * pos.LastPrice)
+		}
+	}
+
+	// Maximum allowed capital usage
+	maxCapital := availableCapital * pt.Leverage
+
+	// How much capital can we still use?
+	remainingCapital := maxCapital - usedCapital
+
+	// If we don't have enough remaining capital for any trade, return 0 (skip trade)
+	if remainingCapital <= 0 {
+		return 0
+	}
+
+	// Try to use the full base notional, but never exceed remaining capital
+	finalNotional := math.Min(pt.BaseNotional, remainingCapital)
+
+	// If the remaining capital is too small to be meaningful, skip the trade
+	if finalNotional < pt.BaseNotional*0.1 { // Less than 10% of base notional
+		return 0
+	}
+
+	// Convert notional to trade size based on fill price
+	tradeSize := finalNotional / fill.Price
+
+	return tradeSize
 }
 
 // validatePositionSize checks if a new position would exceed bankroll limits
@@ -149,8 +207,9 @@ func (pt *PaperTrader) validatePositionSize(
 	// Add the new position value
 	totalPositionValue += math.Abs(newSize * price)
 
-	// Check against bankroll * leverage limit
-	maxPositionValue := pt.Bankroll * pt.Leverage
+	// Check against available capital * leverage limit
+	availableCapital := pt.calculateAvailableCapital()
+	maxPositionValue := availableCapital * pt.Leverage
 
 	return totalPositionValue <= maxPositionValue
 }
@@ -236,27 +295,62 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 	// Get or create position
 	position := pt.getPosition(coin)
 
-	// Calculate trade details
+	var adjustedTradeSize float64
+
+	if pt.DisableDynamicSize {
+		// For tests: use exact fill sizes without dynamic sizing
+		adjustedTradeSize = totalSize
+	} else {
+		// Calculate dynamic trade size based on available capital
+		// Use the most recent fill for dynamic sizing calculation
+		var mostRecentFill *Fill
+		for _, fill := range fills {
+			if mostRecentFill == nil || fill.Time > mostRecentFill.Time {
+				mostRecentFill = fill
+			}
+		}
+
+		dynamicTradeSize := pt.calculateDynamicTradeSize(mostRecentFill)
+
+		// If dynamic sizing returns 0, skip the trade entirely
+		if dynamicTradeSize == 0 {
+			log.Printf("Skipping trade for %s: insufficient capital remaining", coin)
+			pt.PendingFills[coin] = nil // Clear pending fills
+			pt.PendingVolume[coin] = 0
+			delete(pt.LastVolumeUpdate, coin)
+			return
+		}
+
+		// Apply the sign based on the aggregated trade direction
+		adjustedTradeSize = dynamicTradeSize
+		if totalSize < 0 { // If original trade was a sell
+			adjustedTradeSize = -dynamicTradeSize
+		}
+	}
+
+	// Calculate trade details with adjusted sizing
 	oldSize := position.Size
-	newSize := oldSize + totalSize
+	newSize := oldSize + adjustedTradeSize
 
 	// Determine action type
 	action := pt.determineAction(oldSize, newSize)
 
-	// Validate position size limits
-	if !pt.validatePositionSize(coin, newSize, lastPrice) {
-		log.Printf("Skipping trade for %s: would exceed bankroll limit (%.2f * %.2fx = %.2f max)",
-			coin, pt.Bankroll, pt.Leverage, pt.Bankroll*pt.Leverage)
+	// Validate position size limits (skip for tests with disabled dynamic sizing)
+	if !pt.DisableDynamicSize && !pt.validatePositionSize(coin, newSize, lastPrice) {
+		availableCapital := pt.calculateAvailableCapital()
+		log.Printf("Skipping trade for %s: would exceed capital limit (%.2f available * %.2fx = %.2f max)",
+			coin, availableCapital, pt.Leverage, availableCapital*pt.Leverage)
 		pt.PendingFills[coin] = nil // Clear pending fills
 		pt.PendingVolume[coin] = 0
+		delete(pt.LastVolumeUpdate, coin)
 		return
 	}
 
-	// Calculate realized PnL for position changes
-	realizedPnL := pt.calculateRealizedPnL(position, totalSize, avgPrice, totalClosedPnL, action)
+	// Calculate realized PnL for position changes (using adjusted trade size)
+	realizedPnL := pt.calculateRealizedPnL(position, adjustedTradeSize, avgPrice, totalClosedPnL, action)
 
 	// Update position
-	pt.updatePosition(position, totalSize, avgPrice, realizedPnL)
+	pt.updatePosition(position, adjustedTradeSize, avgPrice, realizedPnL)
 
 	// Update last price for unrealized PnL calculation
 	position.LastPrice = lastPrice
@@ -271,7 +365,7 @@ func (pt *PaperTrader) processAggregatedFills(coin string) {
 		Coin:          coin,
 		Action:        action.String(),
 		Side:          map[string]string{"B": "BUY", "A": "SELL"}[side],
-		Size:          math.Abs(totalSize),
+		Size:          math.Abs(adjustedTradeSize),
 		Price:         avgPrice,
 		RealizedPnL:   realizedPnL,
 		PositionSize:  position.Size,

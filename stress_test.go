@@ -336,7 +336,22 @@ func TestMassiveVolumeHandling(t *testing.T) {
 }
 
 func TestRandomizedTradingStress(t *testing.T) {
-	pt := NewTestPaperTrader()
+	// Create paper trader with massive bankroll for stress testing
+	pt := &PaperTrader{
+		Positions:        make(map[string]*Position),
+		StartTime:        time.Now(),
+		TradeHistory:     make([]*PaperTrade, 0),
+		LastTradeTime:    make(map[string]time.Time),
+		PendingFills:     make(map[string][]*Fill),
+		PendingVolume:    make(map[string]float64),
+		LastVolumeUpdate: make(map[string]time.Time),
+		MinTradeInterval: 1 * time.Millisecond,
+		VolumeThreshold:  0.0,
+		VolumeDecayRate:  0.5,
+		Bankroll:         1000000000.0, // $1B for stress test
+		Leverage:         100.0,         // 100x leverage
+		BaseNotional:     10000000.0,    // $10M base trade size for stress test
+	}
 	rand.Seed(42) // Deterministic randomness
 
 	coins := []string{"BTC", "ETH", "SOL", "AVAX", "DOT"}
