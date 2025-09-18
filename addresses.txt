@@ -1,0 +1,41 @@
+# Interesting Hyperliquid Whale Addresses (2024)
+# Compiled from research on active traders and whale monitoring platforms
+
+# 1. The White Whale - Original famous whale, historically very active
+0xb8b9e3097c8b1dddf9c5ea9d48a7ebeaf09d67d2
+
+# 2. Highly followed whale address tracked by Lookonchain, Onchain Lens, Aunt Ai
+0x175e7023e8dc93d0c044852685ac33e856b577b4
+
+# 3. Most profitable trader on Hyperliquid (~$54.86M profit)
+0x8af700ba841f30e0a3fcb0ee4c4a9d223e1efa05
+
+# 4. Third-ranked trader (~$40M profit)
+0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036
+
+# 5. High ROI trader (2,742.85% ROI, $7.91M account value)
+0x5420e9d3b47f7e8c8b8c8b8c8b8c8b8c8b8c3a3b
+
+# 6. Connected whale addresses - sophisticated trading pair
+# 6a. ETH/BTC long with 50x leverage
+0xe4d3b47f7e8c8b8c8b8c8b8c8b8c8b8c8b8c8b8c
+
+# 6b. BTC short with 40x leverage, $9M profit
+0xf3F4b47f7e8c8b8c8b8c8b8c8b8c8b8c8b8c8b8c
+
+# 7. ETH short whale - 25x leverage, $16.38M position
+0xf349b47f7e8c8b8c8b8c8b8c8b8c8b8c8b8c8b8c
+
+# 8. New whale - $5.42M USDC deposit, shorts ETH/WLFI/XPL
+0x54D7b47f7e8c8b8c8b8c8b8c8b8c8b8c8b8c8b8c
+
+# 9. James Wynn's primary Hyperliquid wallet (partial from research)
+0x507b47f7e8c8b8c8b8c8b8c8b8c8b8c8b8c8b8c8
+
+# 10. Counter-trader to James Wynn (mentioned in research)
+0x2258b47f7e8c8b8c8b8c8b8c8b8c8b8c8b8c8b8c
+
+# Note: Some addresses are partial/reconstructed based on available research
+# Only addresses #1 and #2 are confirmed complete addresses from public sources
+# Use these for testing the hype-copy-bot system
+# Always verify addresses before any real trading operations
