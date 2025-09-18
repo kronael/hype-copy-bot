@@ -34,7 +34,7 @@ func NewBot(config *Config) (*Bot, error) {
 }
 
 func (b *Bot) Start() error {
-	log.Println("starting trade following bot...")
+	log.Println("bot: monitoring started")
 	b.running = true
 
 	b.wg.Add(1)
@@ -48,7 +48,7 @@ func (b *Bot) Stop() {
 		return
 	}
 
-	log.Println("stopping bot...")
+	log.Println("bot: stopping")
 	b.running = false
 	close(b.stopChan)
 	b.wg.Wait()
@@ -65,7 +65,7 @@ func (b *Bot) monitorTrades() {
 	ticker := time.NewTicker(5 * time.Second) // Check every 5 seconds
 	defer ticker.Stop()
 
-	log.Printf("starting to monitor trades for account: %s", b.config.TargetAccount)
+	log.Printf("bot: watching %s", b.config.TargetAccount)
 
 	for {
 		select {
@@ -108,8 +108,8 @@ func (b *Bot) checkForNewTrades() error {
 			continue
 		}
 
-		log.Printf("new fill detected: %s %s %.6f @ %.6f (hash: %s)",
-			fill.Side, fill.Coin, fill.Size, fill.Price, fill.Hash[:8])
+		log.Printf("fill: %s %s %.3f@%.2f %s",
+			fill.Side, fill.Coin, fill.Size, fill.Price, fill.Hash[:6])
 
 		if err := b.process(fill); err != nil {
 			log.Printf("Error processing fill: %v", err)
@@ -122,7 +122,7 @@ func (b *Bot) checkForNewTrades() error {
 	}
 
 	if newFillsCount > 0 {
-		log.Printf("processed %d new fills", newFillsCount)
+		log.Printf("bot: processed %d fills", newFillsCount)
 
 		// Show summary every 10 trades
 		totalTrades := b.paperTrader.GetTotalTrades()

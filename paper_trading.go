@@ -574,7 +574,6 @@ func (pt *PaperTrader) updateRealTimePrice(coin string, price float64) {
 }
 
 func (pt *PaperTrader) printTrade(trade *PaperTrade, action PositionAction) {
-	actionStr := fmt.Sprintf("%s %s", action.Emoji(), action.String())
 
 	// Position info
 	positionStr := ""
@@ -596,8 +595,8 @@ func (pt *PaperTrader) printTrade(trade *PaperTrade, action PositionAction) {
 
 	pnlStr := strings.Join(pnlParts, " | ")
 
-	log.Printf("%s %s %.2f %s @ $%.2f | %s | %s",
-		actionStr,
+	log.Printf("trade: %s %s %.2f %s@%.2f %s %s",
+		action.String(),
 		trade.Side,
 		trade.Size,
 		trade.Coin,

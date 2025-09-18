@@ -79,7 +79,7 @@ func loadTOMLConfig(configFile string) (*Config, error) {
 
 	// For paper trading, allow placeholder values for API credentials
 	if config.PaperTradingOnly {
-		log.Println("Paper trading mode: using placeholder API credentials")
+		log.Println("config: paper trading mode")
 		if config.APIKey == "your_api_key_here" {
 			config.APIKey = "paper_trading_placeholder_api_key"
 		}

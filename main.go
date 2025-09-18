@@ -8,7 +8,11 @@ import (
 )
 
 func main() {
-	log.Println("starting hype-copy-bot...")
+	// Configure Unix-style logging (no timestamp, simple format)
+	log.SetFlags(0)
+	log.SetPrefix("")
+
+	log.Println("hype-copy-bot: starting")
 
 	var configFile string
 	if len(os.Args) > 1 {
@@ -33,6 +37,6 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	log.Println("shutting down bot...")
+	log.Println("hype-copy-bot: shutting down")
 	bot.Stop()
 }
