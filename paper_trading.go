@@ -223,6 +223,9 @@ func (pt *PaperTrader) ProcessFill(fill *Fill) {
 		return
 	}
 
+	// Update real-time price for existing position (if any)
+	pt.updateRealTimePrice(fill.Coin, fill.Price)
+
 	// Add fill to pending queue
 	if pt.PendingFills[fill.Coin] == nil {
 		pt.PendingFills[fill.Coin] = make([]*Fill, 0)
@@ -556,6 +559,18 @@ func (pt *PaperTrader) calculateUnrealizedPnL(position *Position) float64 {
 
 	pnlPerUnit := position.LastPrice - position.AvgEntryPrice
 	return pnlPerUnit * position.Size
+}
+
+// updateRealTimePrice updates the LastPrice for existing positions based on market fills
+// This enables real-time unrealized PnL calculation even when we're not trading
+func (pt *PaperTrader) updateRealTimePrice(coin string, price float64) {
+	position, exists := pt.Positions[coin]
+	if !exists || position.Size == 0 {
+		return // No position to update
+	}
+
+	// Update the last price for unrealized PnL calculation
+	position.LastPrice = price
 }
 
 func (pt *PaperTrader) printTrade(trade *PaperTrade, action PositionAction) {
